@@ -95,7 +95,7 @@ class AuthController extends Controller
 
             if (! $already) {
                 DB::table('group_members')->insert([
-                    'id'        => DB::raw('gen_random_uuid()'),
+                    'id'        => (string) Str::uuid(),
                     'group_id'  => $invitation->group_id,
                     'user_id'   => $user->id,
                     'role'      => 'member',
