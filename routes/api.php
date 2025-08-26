@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\GroupController;
 use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\PaymentController;
+use App\Http\Controllers\Api\BalanceController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ReportController;
@@ -47,6 +48,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('groups/{group}/members', [GroupController::class, 'addMember']);
     Route::put('groups/{group}/members/{user}', [GroupController::class, 'updateMemberRole']);
     Route::delete('groups/{group}/members/{user}', [GroupController::class, 'removeMember']);
+
+    // Balances & settlements
+    Route::get('groups/{group}/balances', [BalanceController::class, 'show']);
+    Route::post('groups/{group}/settlements/preview', [BalanceController::class, 'previewSettlements']);
 
     // Invitaciones (REST) + aceptar (SIN la vieja GET invitations/{token})
     Route::apiResource('invitations', InvitationController::class)->only(['index','store','show','destroy']);
