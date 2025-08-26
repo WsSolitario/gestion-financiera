@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use App\Models\Payment;
 
 class PaymentController extends Controller
 {
@@ -160,17 +161,17 @@ class PaymentController extends Controller
     {
         $userId = $request->user()->id;
 
+        $model = Payment::query()->find($paymentId);
+        if (!$model) return response()->json(['message' => 'Pago no encontrado'], 404);
+
+        $this->authorize('view', $model);
+
         $p = DB::table('payments as p')
             ->leftJoin('users as payer', 'payer.id', '=', 'p.payer_id')
             ->leftJoin('users as recv',  'recv.id',  '=', 'p.receiver_id')
             ->where('p.id', $paymentId)
             ->select('p.*', 'payer.name as payer_name', 'recv.name as receiver_name')
             ->first();
-
-        if (!$p) return response()->json(['message' => 'Pago no encontrado'], 404);
-        if ($p->payer_id !== $userId && $p->receiver_id !== $userId) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
 
         $eps = DB::table('expense_participants as ep')
             ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
@@ -206,10 +207,11 @@ class PaymentController extends Controller
     {
         $userId = $request->user()->id;
 
-        $p = DB::table('payments')->where('id', $paymentId)->first();
-        if (!$p) return response()->json(['message' => 'Pago no encontrado'], 404);
-        if ($p->payer_id !== $userId) return response()->json(['message' => 'Solo el pagador puede actualizar el pago'], 403);
-        if ($p->status !== 'pending') return response()->json(['message' => 'Solo puedes actualizar pagos pendientes'], 409);
+        $model = Payment::query()->find($paymentId);
+        if (!$model) return response()->json(['message' => 'Pago no encontrado'], 404);
+        if ($model->status !== 'pending') return response()->json(['message' => 'Solo puedes actualizar pagos pendientes'], 409);
+
+        $this->authorize('update', $model);
 
         $data = $request->validate([
             'payment_method' => ['sometimes', 'nullable', 'string', 'max:100'],
@@ -239,20 +241,21 @@ class PaymentController extends Controller
     {
         $userId = $request->user()->id;
 
-        $p = DB::table('payments')->where('id', $paymentId)->first();
-        if (!$p) return response()->json(['message' => 'Pago no encontrado'], 404);
-        if ($p->receiver_id !== $userId) return response()->json(['message' => 'Solo el receptor puede aprobar este pago'], 403);
-        if ($p->status !== 'pending') return response()->json(['message' => "El pago no está pendiente (estado: {$p->status})"], 409);
+        $model = Payment::query()->find($paymentId);
+        if (!$model) return response()->json(['message' => 'Pago no encontrado'], 404);
+        if ($model->status !== 'pending') return response()->json(['message' => "El pago no está pendiente (estado: {$model->status})"], 409);
+
+        $this->authorize('approve', $model);
 
         $sum = DB::table('expense_participants')->where('payment_id', $paymentId)->sum('amount_due');
-        if ($this->money($sum) !== $this->money($p->amount)) {
+        if ($this->money($sum) !== $this->money($model->amount)) {
             return response()->json(['message' => 'Inconsistencia: la suma de EPs no coincide con el monto del pago'], 422);
         }
 
-        DB::transaction(function () use ($paymentId, $p) {
+        DB::transaction(function () use ($paymentId, $model) {
             DB::table('payments')->where('id', $paymentId)->update([
                 'status'       => 'completed',
-                'payment_date' => $p->payment_date ?? now(),
+                'payment_date' => $model->payment_date ?? now(),
                 'updated_at'   => now(),
             ]);
 
@@ -279,10 +282,11 @@ class PaymentController extends Controller
     {
         $userId = $request->user()->id;
 
-        $p = DB::table('payments')->where('id', $paymentId)->first();
-        if (!$p) return response()->json(['message' => 'Pago no encontrado'], 404);
-        if ($p->receiver_id !== $userId) return response()->json(['message' => 'Solo el receptor puede rechazar este pago'], 403);
-        if ($p->status !== 'pending') return response()->json(['message' => 'Solo puedes rechazar pagos pendientes'], 409);
+        $model = Payment::query()->find($paymentId);
+        if (!$model) return response()->json(['message' => 'Pago no encontrado'], 404);
+        if ($model->status !== 'pending') return response()->json(['message' => 'Solo puedes rechazar pagos pendientes'], 409);
+
+        $this->authorize('reject', $model);
 
         DB::transaction(function () use ($paymentId) {
             // liberar EPs

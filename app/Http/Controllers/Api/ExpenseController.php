@@ -14,7 +14,6 @@ use App\Jobs\ProcessExpenseOcr;
 
 use App\Models\Expense;
 use App\Models\ExpenseParticipant;
-use App\Models\Group;
 
 class ExpenseController extends Controller
 {
@@ -190,15 +189,12 @@ class ExpenseController extends Controller
     {
         $userId = $request->user()->id;
 
-        $expense = DB::table('expenses')->where('id', $expenseId)->first();
+        $expense = Expense::query()->find($expenseId);
         if (!$expense) {
             return response()->json(['message' => 'Gasto no encontrado'], 404);
         }
 
-        // Seguridad: solo pagador, participante o miembro del grupo puede ver
-        if (!$this->userInExpenseContext($userId, $expense)) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
+        $this->authorize('view', $expense);
 
         // Participantes
         $parts = DB::table('expense_participants as ep')
@@ -233,16 +229,15 @@ class ExpenseController extends Controller
     {
         $userId = $request->user()->id;
 
-        $expense = DB::table('expenses')->where('id', $expenseId)->first();
+        $expense = Expense::query()->find($expenseId);
         if (!$expense) {
             return response()->json(['message' => 'Gasto no encontrado'], 404);
         }
         if ($expense->status !== 'pending') {
             return response()->json(['message' => 'No se puede editar un gasto no-pending'], 409);
         }
-        if ($expense->payer_id !== $userId) {
-            return response()->json(['message' => 'Solo el pagador puede editar este gasto'], 403);
-        }
+
+        $this->authorize('update', $expense);
 
         // Validación flexible para update (incluye has_ticket)
         $validator = Validator::make($request->all(), [
@@ -358,13 +353,12 @@ class ExpenseController extends Controller
     {
         $userId = $request->user()->id;
 
-        $expense = DB::table('expenses')->where('id', $expenseId)->first();
+        $expense = Expense::query()->find($expenseId);
         if (!$expense) {
             return response()->json(['message' => 'Gasto no encontrado'], 404);
         }
-        if ($expense->payer_id !== $userId) {
-            return response()->json(['message' => 'Solo el pagador puede eliminar este gasto'], 403);
-        }
+
+        $this->authorize('delete', $expense);
 
         DB::transaction(function () use ($expenseId) {
             DB::table('expenses')->where('id', $expenseId)->delete();
@@ -381,17 +375,12 @@ class ExpenseController extends Controller
     {
         $userId = $request->user()->id;
 
-        $expense = DB::table('expenses')->where('id', $expenseId)->first();
+        $expense = Expense::query()->find($expenseId);
         if (!$expense) {
             return response()->json(['message' => 'Gasto no encontrado'], 404);
         }
 
-        // Solo pagador puede aprobar globalmente con el esquema actual
-        if ($expense->payer_id !== $userId) {
-            return response()->json([
-                'message' => 'Solo el pagador puede aprobar este gasto con el esquema actual.'
-            ], 403);
-        }
+        $this->authorize('approve', $expense);
 
         if ($expense->status !== 'pending') {
             return response()->json(['message' => "El gasto ya está en estado '{$expense->status}'"], 409);
@@ -443,25 +432,6 @@ class ExpenseController extends Controller
         }
     }
 
-    private function userInExpenseContext(string $userId, object $expense): bool
-    {
-        if ($expense->payer_id === $userId) return true;
-
-        $isParticipant = DB::table('expense_participants')
-            ->where('expense_id', $expense->id)
-            ->where('user_id', $userId)
-            ->exists();
-
-        if ($isParticipant) return true;
-
-        // También permitimos ver si es miembro del grupo del gasto
-        $inGroup = DB::table('group_members')
-            ->where('group_id', $expense->group_id)
-            ->where('user_id', $userId)
-            ->exists();
-
-        return $inGroup;
-    }
 
     private function formatExpense(object $e): array
     {

@@ -16,6 +16,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn() => null);
     })
 
+    ->withProviders([
+        App\Providers\AppServiceProvider::class,
+        App\Providers\AuthServiceProvider::class,
+    ])
+
     ->withExceptions(function (Exceptions $exceptions) {
         // Puedes dejarlo vacío por ahora
     })
