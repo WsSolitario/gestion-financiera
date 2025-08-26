@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
@@ -15,6 +14,8 @@ use App\Jobs\ProcessExpenseOcr;
 use App\Models\Expense;
 use App\Models\ExpenseParticipant;
 use App\Models\Group;
+use App\Http\Requests\Expense\StoreExpenseRequest;
+use App\Http\Requests\Expense\UpdateExpenseRequest;
 
 class ExpenseController extends Controller
 {
@@ -113,11 +114,11 @@ class ExpenseController extends Controller
      *   participants: [{ user_id: uuid, amount_due: number }, ...]
      * }
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreExpenseRequest $request): JsonResponse
     {
         $userId = $request->user()->id;
 
-        $data = $this->validateStore($request);
+        $data = $request->validated();
 
         // Validar que el pagador (usuario actual) y TODOS los participantes pertenecen al grupo
         $this->assertGroupMembershipOrFail($userId, $data['group_id']);
@@ -229,7 +230,7 @@ class ExpenseController extends Controller
      * Solo cuando status = 'pending'. Solo el pagador puede editar.
      * Permite actualizar campos básicos y, opcionalmente, reemplazar participantes.
      */
-    public function update(string $expenseId, Request $request): JsonResponse
+    public function update(string $expenseId, UpdateExpenseRequest $request): JsonResponse
     {
         $userId = $request->user()->id;
 
@@ -243,23 +244,7 @@ class ExpenseController extends Controller
         if ($expense->payer_id !== $userId) {
             return response()->json(['message' => 'Solo el pagador puede editar este gasto'], 403);
         }
-
-        // Validación flexible para update (incluye has_ticket)
-        $validator = Validator::make($request->all(), [
-            'description'        => ['sometimes', 'string'],
-            'total_amount'       => ['sometimes', 'numeric', 'min:0'],
-            'expense_date'       => ['sometimes', 'date_format:Y-m-d'],
-
-            'has_ticket'         => ['sometimes', 'boolean'],
-            'ticket_image_url'   => ['nullable', 'url', 'required_if:has_ticket,true', 'prohibited_unless:has_ticket,true'],
-
-            'participants'               => ['sometimes', 'array', 'min:1'],
-            'participants.*.user_id'     => ['required_with:participants', 'uuid'],
-            'participants.*.amount_due'  => ['required_with:participants', 'numeric', 'min:0'],
-        ]);
-        $validator->validate();
-
-        $data = $validator->validated();
+        $data = $request->validated();
 
         // Si hay participants, validar pertenencia + suma total
         if (isset($data['participants'])) {
@@ -410,24 +395,6 @@ class ExpenseController extends Controller
     // ===========================
     // Helpers
     // ===========================
-
-    private function validateStore(Request $request): array
-    {
-        // Valida indicador de ticket y reglas condicionales
-        return $request->validate([
-            'description'                => ['required', 'string'],
-            'total_amount'               => ['required', 'numeric', 'min:0'],
-            'group_id'                   => ['required', 'uuid'],
-            'expense_date'               => ['required', 'date_format:Y-m-d'],
-
-            'has_ticket'                 => ['required', 'boolean'],
-            'ticket_image_url'           => ['nullable', 'url', 'required_if:has_ticket,true', 'prohibited_unless:has_ticket,true'],
-
-            'participants'               => ['required', 'array', 'min:1'],
-            'participants.*.user_id'     => ['required', 'uuid'],
-            'participants.*.amount_due'  => ['required', 'numeric', 'min:0'],
-        ]);
-    }
 
     private function assertGroupMembershipOrFail(string $userId, string $groupId): void
     {

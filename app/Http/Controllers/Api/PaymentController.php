@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
+use App\Http\Requests\Payment\StorePaymentRequest;
+use App\Http\Requests\Payment\UpdatePaymentRequest;
+
 class PaymentController extends Controller
 {
     public function index(Request $request): JsonResponse
@@ -68,23 +71,15 @@ class PaymentController extends Controller
         ], 200);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StorePaymentRequest $request): JsonResponse
     {
         $userId = $request->user()->id;
 
-        $data = $request->validate([
-            'expense_participant_ids' => ['required', 'array', 'min:1'],
-            'expense_participant_ids.*' => ['uuid'],
-            'amount'          => ['sometimes', 'numeric', 'min:0'],
-            'payment_method'  => ['sometimes', 'nullable', 'string', 'max:100'],
-            'proof_url'       => ['sometimes', 'nullable', 'url'],
-            'signature'       => ['sometimes', 'nullable', 'string'],
-            'payment_date'    => ['sometimes', 'nullable', 'date'],
-        ]);
+        $data = $request->validated();
 
         $payment = null;
 
-        DB::transaction(function () use ($request, $userId, $data, &$payment) {
+        DB::transaction(function () use ($userId, $data, &$payment) {
             // Re-leemos y bloqueamos filas EP para evitar carreras
             $eps = DB::table('expense_participants as ep')
                 ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
@@ -202,7 +197,7 @@ class PaymentController extends Controller
         return response()->json($payload, 200);
     }
 
-    public function update(string $paymentId, Request $request): JsonResponse
+    public function update(string $paymentId, UpdatePaymentRequest $request): JsonResponse
     {
         $userId = $request->user()->id;
 
@@ -211,11 +206,7 @@ class PaymentController extends Controller
         if ($p->payer_id !== $userId) return response()->json(['message' => 'Solo el pagador puede actualizar el pago'], 403);
         if ($p->status !== 'pending') return response()->json(['message' => 'Solo puedes actualizar pagos pendientes'], 409);
 
-        $data = $request->validate([
-            'payment_method' => ['sometimes', 'nullable', 'string', 'max:100'],
-            'proof_url'      => ['sometimes', 'nullable', 'url'],
-            'signature'      => ['sometimes', 'nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         if (empty($data)) return response()->json(['message' => 'Nada que actualizar'], 422);
 

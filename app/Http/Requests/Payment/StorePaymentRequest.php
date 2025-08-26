@@ -11,7 +11,7 @@ class StorePaymentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,13 @@ class StorePaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'expense_participant_ids'   => ['required', 'array', 'min:1'],
+            'expense_participant_ids.*' => ['uuid'],
+            'amount'                    => ['sometimes', 'numeric', 'min:0'],
+            'payment_method'            => ['sometimes', 'nullable', 'string', 'max:100'],
+            'proof_url'                 => ['sometimes', 'nullable', 'url'],
+            'signature'                 => ['sometimes', 'nullable', 'string'],
+            'payment_date'              => ['sometimes', 'nullable', 'date'],
         ];
     }
 }
