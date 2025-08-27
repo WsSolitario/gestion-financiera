@@ -164,6 +164,7 @@ class PaymentController extends Controller
         $model = Payment::query()->find($paymentId);
         if (!$model) return response()->json(['message' => 'Pago no encontrado'], 404);
 
+        // Authorize only after confirming the payment exists
         $this->authorize('view', $model);
 
         $p = DB::table('payments as p')
