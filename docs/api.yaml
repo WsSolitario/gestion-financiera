@@ -1,0 +1,752 @@
+openapi: 3.0.0
+info:
+  title: Gestión Financiera API
+  version: '1.0.0'
+servers:
+  - url: http://localhost/api
+    description: Desarrollo local
+components:
+  securitySchemes:
+    sanctum:
+      type: http
+      scheme: bearer
+      bearerFormat: Bearer
+security:
+  - sanctum: []
+paths:
+  /auth/register:
+    post:
+      summary: Registra un usuario a partir de una invitación
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, password_confirmation, invitation_token]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                password_confirmation:
+                  type: string
+                  format: password
+                invitation_token:
+                  type: string
+                profile_picture_url:
+                  type: string
+                  format: uri
+                phone_number:
+                  type: string
+            example:
+              name: Juan Pérez
+              email: juan@example.com
+              password: secret123
+              password_confirmation: secret123
+              invitation_token: ABC123
+      responses:
+        '201':
+          description: Usuario registrado
+  /auth/login:
+    post:
+      summary: Inicia sesión y devuelve un token Sanctum
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+            example:
+              email: juan@example.com
+              password: secret123
+      responses:
+        '200':
+          description: Token generado
+  /auth/logout:
+    post:
+      summary: Cierra la sesión actual
+      parameters:
+        - in: query
+          name: all
+          schema:
+            type: boolean
+          description: Revoca todos los tokens del usuario
+      responses:
+        '204':
+          description: Sesión cerrada
+  /users/me:
+    get:
+      summary: Devuelve los datos del usuario autenticado
+      responses:
+        '200':
+          description: Información del usuario
+    put:
+      summary: Actualiza el perfil del usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                profile_picture_url:
+                  type: string
+                  format: uri
+                phone_number:
+                  type: string
+            example:
+              name: Juan Actualizado
+              phone_number: '+34123456789'
+      responses:
+        '200':
+          description: Perfil actualizado
+    delete:
+      summary: Elimina la cuenta del usuario y revoca sus tokens
+      responses:
+        '204':
+          description: Cuenta eliminada
+  /users/me/password:
+    put:
+      summary: Actualiza la contraseña del usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [current_password, password, password_confirmation]
+              properties:
+                current_password:
+                  type: string
+                  format: password
+                password:
+                  type: string
+                  format: password
+                password_confirmation:
+                  type: string
+                  format: password
+            example:
+              current_password: secret123
+              password: nuevo123
+              password_confirmation: nuevo123
+      responses:
+        '204':
+          description: Contraseña actualizada
+  /groups:
+    get:
+      summary: Lista los grupos a los que pertenece el usuario
+      responses:
+        '200':
+          description: Lista de grupos
+    post:
+      summary: Crea un nuevo grupo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+            example:
+              name: Viaje a Madrid
+              description: Gastos del viaje de mayo
+      responses:
+        '201':
+          description: Grupo creado
+  /groups/{group}:
+    parameters:
+      - in: path
+        name: group
+        required: true
+        schema:
+          type: string
+        description: ID del grupo
+    get:
+      summary: Muestra los detalles de un grupo y sus miembros
+      responses:
+        '200':
+          description: Detalles del grupo
+    put:
+      summary: Actualiza nombre o descripción (owner/admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+            example:
+              name: Nuevo nombre
+              description: Descripción actualizada
+      responses:
+        '200':
+          description: Grupo actualizado
+    delete:
+      summary: Elimina el grupo (solo owner)
+      responses:
+        '204':
+          description: Grupo eliminado
+  /groups/{group}/members:
+    parameters:
+      - in: path
+        name: group
+        required: true
+        schema:
+          type: string
+        description: ID del grupo
+    post:
+      summary: Agrega un miembro existente al grupo (owner/admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_id]
+              properties:
+                user_id:
+                  type: string
+                  format: uuid
+                role:
+                  type: string
+                  enum: [member, admin]
+            example:
+              user_id: 11111111-2222-3333-4444-555555555555
+              role: member
+      responses:
+        '201':
+          description: Miembro agregado
+  /groups/{group}/members/{user}:
+    parameters:
+      - in: path
+        name: group
+        required: true
+        schema:
+          type: string
+        description: ID del grupo
+      - in: path
+        name: user
+        required: true
+        schema:
+          type: string
+        description: ID del usuario
+    put:
+      summary: Cambia el rol de un miembro
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role]
+              properties:
+                role:
+                  type: string
+                  enum: [member, admin, owner]
+            example:
+              role: admin
+      responses:
+        '200':
+          description: Rol actualizado
+    delete:
+      summary: Elimina a un miembro del grupo
+      responses:
+        '204':
+          description: Miembro eliminado
+  /groups/{group}/balances:
+    parameters:
+      - in: path
+        name: group
+        required: true
+        schema:
+          type: string
+        description: ID del grupo
+    get:
+      summary: Devuelve el balance de cada miembro del grupo
+      responses:
+        '200':
+          description: Balances del grupo
+  /groups/{group}/settlements/preview:
+    parameters:
+      - in: path
+        name: group
+        required: true
+        schema:
+          type: string
+        description: ID del grupo
+    post:
+      summary: Sugiere transferencias para saldar balances
+      responses:
+        '200':
+          description: Sugerencias de transferencias
+  /invitations:
+    get:
+      summary: Lista invitaciones
+      parameters:
+        - in: query
+          name: mine
+          schema:
+            type: boolean
+          description: Ver invitaciones dirigidas a mi email
+        - in: query
+          name: groupId
+          schema:
+            type: string
+            format: uuid
+          description: Filtrar por grupo
+      responses:
+        '200':
+          description: Lista de invitaciones
+    post:
+      summary: Crea una invitación para un grupo (owner/admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [invitee_email, group_id]
+              properties:
+                invitee_email:
+                  type: string
+                  format: email
+                group_id:
+                  type: string
+                  format: uuid
+                expires_in_days:
+                  type: integer
+            example:
+              invitee_email: amigo@example.com
+              group_id: 11111111-2222-3333-4444-555555555555
+              expires_in_days: 7
+      responses:
+        '201':
+          description: Invitación creada
+  /invitations/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: ID de la invitación
+    get:
+      summary: Muestra una invitación específica
+      responses:
+        '200':
+          description: Detalle de la invitación
+    delete:
+      summary: Marca la invitación como expirada
+      responses:
+        '204':
+          description: Invitación expirada
+  /invitations/accept:
+    post:
+      summary: Acepta una invitación mediante token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+            example:
+              token: ABC123
+      responses:
+        '200':
+          description: Invitación aceptada
+  /invitations/token/{token}:
+    parameters:
+      - in: path
+        name: token
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Verifica un token de invitación (público)
+      security: []
+      responses:
+        '200':
+          description: Token válido
+  /expenses:
+    get:
+      summary: Lista gastos donde el usuario es pagador o participante
+      parameters:
+        - in: query
+          name: groupId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Lista de gastos
+    post:
+      summary: Registra un nuevo gasto con sus participantes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [description, total_amount, group_id, expense_date, has_ticket, participants]
+              properties:
+                description:
+                  type: string
+                total_amount:
+                  type: number
+                group_id:
+                  type: string
+                  format: uuid
+                expense_date:
+                  type: string
+                  format: date
+                has_ticket:
+                  type: boolean
+                ticket_image_url:
+                  type: string
+                  format: uri
+                participants:
+                  type: array
+                  items:
+                    type: object
+                    required: [user_id, amount_due]
+                    properties:
+                      user_id:
+                        type: string
+                        format: uuid
+                      amount_due:
+                        type: number
+            example:
+              description: Cena
+              total_amount: 100.5
+              group_id: 11111111-2222-3333-4444-555555555555
+              expense_date: 2023-05-01
+              has_ticket: true
+              ticket_image_url: https://example.com/ticket.jpg
+              participants:
+                - user_id: 22222222-3333-4444-5555-666666666666
+                  amount_due: 50.25
+                - user_id: 33333333-4444-5555-6666-777777777777
+                  amount_due: 50.25
+      responses:
+        '201':
+          description: Gasto registrado
+  /expenses/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Muestra un gasto específico
+      responses:
+        '200':
+          description: Detalle del gasto
+    put:
+      summary: Actualiza un gasto existente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                description:
+                  type: string
+                total_amount:
+                  type: number
+                expense_date:
+                  type: string
+                  format: date
+                has_ticket:
+                  type: boolean
+                ticket_image_url:
+                  type: string
+                  format: uri
+                participants:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      user_id:
+                        type: string
+                        format: uuid
+                      amount_due:
+                        type: number
+            example:
+              description: Cena actualizada
+      responses:
+        '200':
+          description: Gasto actualizado
+    delete:
+      summary: Elimina un gasto (pagador)
+      responses:
+        '204':
+          description: Gasto eliminado
+  /expenses/{id}/approve:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+    post:
+      summary: El pagador aprueba el gasto
+      responses:
+        '200':
+          description: Gasto aprobado
+  /payments/due:
+    get:
+      summary: Resumen de deudas pendientes para el usuario autenticado
+      parameters:
+        - in: query
+          name: group_id
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Deudas pendientes
+  /payments:
+    get:
+      summary: Lista pagos enviados o recibidos
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, approved, rejected]
+        - in: query
+          name: direction
+          schema:
+            type: string
+            enum: [sent, received]
+        - in: query
+          name: groupId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Lista de pagos
+    post:
+      summary: Crea un pago entre dos miembros de un grupo
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [group_id, from_user_id, to_user_id, amount]
+              properties:
+                group_id:
+                  type: string
+                  format: uuid
+                from_user_id:
+                  type: string
+                  format: uuid
+                to_user_id:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                note:
+                  type: string
+                evidence_url:
+                  type: string
+                  format: uri
+            example:
+              group_id: 11111111-2222-3333-4444-555555555555
+              from_user_id: 22222222-3333-4444-5555-666666666666
+              to_user_id: 33333333-4444-5555-6666-777777777777
+              amount: 25.5
+              note: Pago por comida
+      responses:
+        '201':
+          description: Pago creado
+  /payments/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Muestra detalles de un pago
+      responses:
+        '200':
+          description: Detalle del pago
+    put:
+      summary: Actualiza un pago pendiente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                note:
+                  type: string
+                evidence_url:
+                  type: string
+                  format: uri
+            example:
+              note: Nota actualizada
+      responses:
+        '200':
+          description: Pago actualizado
+  /payments/{id}/approve:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+    post:
+      summary: El receptor aprueba el pago
+      responses:
+        '200':
+          description: Pago aprobado
+  /payments/{id}/reject:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+    post:
+      summary: El receptor rechaza el pago
+      responses:
+        '200':
+          description: Pago rechazado
+  /notifications/register-device:
+    post:
+      summary: Registra o actualiza un dispositivo para recibir notificaciones
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [device_token, device_type]
+              properties:
+                device_token:
+                  type: string
+                device_type:
+                  type: string
+                  enum: [android, ios, web]
+            example:
+              device_token: TOKEN123
+              device_type: android
+      responses:
+        '200':
+          description: Dispositivo registrado
+  /dashboard/summary:
+    get:
+      summary: Resumen de deudas, pagos y actividad reciente
+      parameters:
+        - in: query
+          name: groupId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Resumen de dashboard
+  /reports:
+    get:
+      summary: Reportes agregados de gastos y pagos
+      parameters:
+        - in: query
+          name: groupId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: startDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: endDate
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: granularity
+          schema:
+            type: string
+            enum: [day, month, auto]
+        - in: query
+          name: paymentStatus
+          schema:
+            type: string
+            enum: [completed, pending, any]
+      responses:
+        '200':
+          description: Reporte generado

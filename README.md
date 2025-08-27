@@ -55,6 +55,8 @@ contraseña correspondientes.
 ## Documentación de la API
 
 La documentación completa de los endpoints se encuentra en [docs/API.md](docs/API.md).
+Para integrar con clientes externos se provee una especificación OpenAPI en [docs/api.yaml](docs/api.yaml)
+y una colección de solicitudes lista para importar en [docs/api.http](docs/api.http).
 
 ## Endpoints principales
 
