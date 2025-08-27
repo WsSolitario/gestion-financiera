@@ -27,7 +27,7 @@ class ReportController extends Controller
         $grain         = $this->resolveGrain($granularity, $start, $end); // 'day' o 'month'
         $periodFormat  = $grain === 'day' ? 'YYYY-MM-DD' : 'YYYY-MM';
 
-        $paymentStatus = $request->query('paymentStatus', 'completed'); // completed|pending|any
+        $paymentStatus = $request->query('paymentStatus', 'approved'); // approved|pending|rejected|any
 
         // ============================
         // TOTALES (GASTOS)

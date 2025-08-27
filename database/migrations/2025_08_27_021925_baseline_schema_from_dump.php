@@ -29,7 +29,7 @@ return new class extends Migration
                     CREATE TYPE public.device_platform AS ENUM ('android','ios','web');
                 END IF;
                 IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'payment_status') THEN
-                    CREATE TYPE public.payment_status AS ENUM ('pending','completed','failed');
+                    CREATE TYPE public.payment_status AS ENUM ('pending','approved','rejected');
                 END IF;
             END $$;
         ");
@@ -273,10 +273,11 @@ return new class extends Migration
 
         // Borra función y enums
         DB::unprepared("DROP FUNCTION IF EXISTS public.trigger_set_timestamp();");
+        // Elimina el enum de estado de pago actualizado
+        DB::unprepared("DROP TYPE IF EXISTS public.payment_status;");
         DB::unprepared("
             DO $$ BEGIN
                 IF EXISTS (SELECT 1 FROM pg_type WHERE typname='device_platform') THEN DROP TYPE public.device_platform; END IF;
-                IF EXISTS (SELECT 1 FROM pg_type WHERE typname='payment_status') THEN DROP TYPE public.payment_status; END IF;
                 IF EXISTS (SELECT 1 FROM pg_type WHERE typname='invitation_status') THEN DROP TYPE public.invitation_status; END IF;
                 IF EXISTS (SELECT 1 FROM pg_type WHERE typname='ocr_processing_status') THEN DROP TYPE public.ocr_processing_status; END IF;
                 IF EXISTS (SELECT 1 FROM pg_type WHERE typname='expense_status') THEN DROP TYPE public.expense_status; END IF;

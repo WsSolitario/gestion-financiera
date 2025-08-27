@@ -198,5 +198,5 @@ Resumen de deudas, pagos y actividad reciente. Filtros opcionales: `?groupId`, `
 
 ### GET /api/reports
 Reportes agregados de gastos y pagos.
-Filtros: `?groupId`, `?startDate`, `?endDate`, `?granularity=day|month|auto`, `?paymentStatus=completed|pending|any`.
+Filtros: `?groupId`, `?startDate`, `?endDate`, `?granularity=day|month|auto`, `?paymentStatus=approved|pending|rejected|any`.
 

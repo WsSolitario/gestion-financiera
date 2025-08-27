@@ -746,7 +746,7 @@ paths:
           name: paymentStatus
           schema:
             type: string
-            enum: [completed, pending, any]
+            enum: [approved, pending, rejected, any]
       responses:
         '200':
           description: Reporte generado
