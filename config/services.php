@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'fcm' => [
+        'server_key' => env('FCM_SERVER_KEY'),
+    ],
+
+    'apn' => [
+        'auth_token' => env('APN_AUTH_TOKEN'),
+        'topic' => env('APN_TOPIC'),
+    ],
+
 ];

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Models\Payment;
+use App\Jobs\SendPushNotification;
 
 class PaymentController extends Controller
 {
@@ -260,6 +261,12 @@ class PaymentController extends Controller
             ->where('p.id', $paymentId)
             ->select('p.*', 'payer.name as payer_name', 'recv.name as receiver_name')
             ->first();
+
+        SendPushNotification::dispatch(
+            $payment->from_user_id,
+            'Pago aprobado',
+            "Tu pago fue aprobado por {$updated->receiver_name}"
+        );
 
         return response()->json([
             'message' => 'Payment approved',
