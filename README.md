@@ -94,6 +94,36 @@ El proyecto está pensado para PostgreSQL. Ajusta las variables anteriores segú
 | `npm run dev`              | Compila activos front‑end con Vite.              |
 | `php artisan test`         | Ejecuta la suite de pruebas.                     |
 
+## Notificaciones Push
+
+Para enviar notificaciones push se utilizan Firebase Cloud Messaging (FCM) y Apple Push Notification service (APNs).
+
+Variables de entorno:
+
+| Variable          | Descripción                                  |
+|-------------------|----------------------------------------------|
+| `FCM_SERVER_KEY`  | Clave del servidor para FCM.                 |
+| `APN_AUTH_TOKEN`  | Token de autenticación de APNs.              |
+| `APN_TOPIC`       | Identificador del tópico de la app en APNs.  |
+
+Ejemplo en el `.env`:
+
+```env
+FCM_SERVER_KEY=tu_clave_fcm
+APN_AUTH_TOKEN=tu_token_apn
+APN_TOPIC=com.example.app
+```
+
+Para procesar el job `SendPushNotification` es necesario ejecutar el trabajador de la cola:
+
+```bash
+php artisan queue:work
+```
+
+Documentación adicional:
+- [Firebase Cloud Messaging](https://firebase.google.com/docs/cloud-messaging)
+- [Apple Push Notification service](https://developer.apple.com/documentation/usernotifications)
+
 ## Datos de prueba
 
 Para generar datos iniciales, incluyendo un grupo de ejemplo y una invitación,
