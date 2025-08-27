@@ -172,6 +172,7 @@ class PaymentController extends Controller
             ->where('p.id', $paymentId)
             ->select('p.*', 'payer.name as payer_name', 'recv.name as receiver_name')
             ->first();
+        if (!$p) return response()->json(['message' => 'Pago no encontrado'], 404);
 
         $eps = DB::table('expense_participants as ep')
             ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
