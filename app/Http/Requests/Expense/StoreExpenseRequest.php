@@ -28,7 +28,12 @@ class StoreExpenseRequest extends FormRequest
             'expense_date'              => ['required', 'date_format:Y-m-d'],
 
             'has_ticket'                => ['required', 'boolean'],
-            'ticket_image_url'          => ['nullable', 'url', 'required_if:has_ticket,true', 'prohibited_unless:has_ticket,true'],
+            'ticket_image_url'          => [
+                'nullable',
+                'url',
+                'required_if:has_ticket,true',
+                'prohibited_unless:has_ticket,true',
+            ],
 
             'participants'              => ['required', 'array', 'min:1'],
             'participants.*.user_id'    => ['required', 'uuid'],
@@ -36,3 +41,4 @@ class StoreExpenseRequest extends FormRequest
         ];
     }
 }
+
