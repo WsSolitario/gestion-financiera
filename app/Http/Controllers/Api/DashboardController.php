@@ -62,7 +62,7 @@ class DashboardController extends Controller
 
         // Pagos pendientes de que TÚ apruebes (pagos donde tú eres receptor y están en pending)
         $pendingPaymentApprovals = DB::table('payments as p')
-            ->where('p.receiver_id', $userId)
+            ->where('p.to_user_id', $userId)
             ->where('p.status', 'pending')
             ->when($groupId, function ($q) use ($groupId) {
                 // Si filtras por grupo, considera pagos ligados a participants de gastos de ese grupo
@@ -185,10 +185,10 @@ class DashboardController extends Controller
 
         // Últimos 5 pagos donde seas pagador o receptor
         $recentPayments = DB::table('payments as p')
-            ->leftJoin('users as payer', 'payer.id', '=', 'p.payer_id')
-            ->leftJoin('users as recv',  'recv.id',  '=', 'p.receiver_id')
+            ->leftJoin('users as payer', 'payer.id', '=', 'p.from_user_id')
+            ->leftJoin('users as recv',  'recv.id',  '=', 'p.to_user_id')
             ->where(function ($q) use ($userId) {
-                $q->where('p.payer_id', $userId)->orWhere('p.receiver_id', $userId);
+                $q->where('p.from_user_id', $userId)->orWhere('p.to_user_id', $userId);
             })
             ->when($groupId, function ($q) use ($groupId) {
                 // Si hay groupId, filtramos pagos ligados a deudas de ese grupo
@@ -206,10 +206,10 @@ class DashboardController extends Controller
             ->limit(5)
             ->get()
             ->map(function ($p) use ($userId) {
-                $direction = $p->payer_id === $userId ? 'outgoing' : 'incoming';
-                $counterparty = $p->payer_id === $userId
-                    ? ['user_id' => $p->receiver_id, 'name' => $p->receiver_name]
-                    : ['user_id' => $p->payer_id,    'name' => $p->payer_name];
+                $direction = $p->from_user_id === $userId ? 'outgoing' : 'incoming';
+                $counterparty = $p->from_user_id === $userId
+                    ? ['user_id' => $p->to_user_id, 'name' => $p->receiver_name]
+                    : ['user_id' => $p->from_user_id,    'name' => $p->payer_name];
 
                 return [
                     'id'           => $p->id,

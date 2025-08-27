@@ -86,21 +86,29 @@ return new class extends Migration
 
             CREATE TABLE IF NOT EXISTS public.payments (
                 id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-                payer_id uuid,
-                receiver_id uuid,
+                from_user_id uuid,
+                to_user_id uuid,
+                group_id uuid,
                 amount numeric(10,2) NOT NULL,
+                unapplied_amount numeric(10,2) DEFAULT 0,
                 payment_method varchar(100),
+                note text,
                 proof_url text,
+                evidence_url text,
                 signature text,
                 status public.payment_status NOT NULL DEFAULT 'pending',
                 payment_date timestamptz,
-                CONSTRAINT payments_payer_id_fkey
-                    FOREIGN KEY (payer_id) REFERENCES public.users(id) ON DELETE SET NULL,
-                CONSTRAINT payments_receiver_id_fkey
-                    FOREIGN KEY (receiver_id) REFERENCES public.users(id) ON DELETE SET NULL
+                created_at timestamptz DEFAULT CURRENT_TIMESTAMP,
+                updated_at timestamptz DEFAULT CURRENT_TIMESTAMP,
+                CONSTRAINT payments_from_user_id_fkey
+                    FOREIGN KEY (from_user_id) REFERENCES public.users(id) ON DELETE SET NULL,
+                CONSTRAINT payments_to_user_id_fkey
+                    FOREIGN KEY (to_user_id) REFERENCES public.users(id) ON DELETE SET NULL,
+                CONSTRAINT payments_group_id_fkey
+                    FOREIGN KEY (group_id) REFERENCES public.groups(id) ON DELETE CASCADE
             );
-            CREATE INDEX IF NOT EXISTS idx_payments_payer ON public.payments(payer_id);
-            CREATE INDEX IF NOT EXISTS idx_payments_recv  ON public.payments(receiver_id);
+            CREATE INDEX IF NOT EXISTS idx_payments_from ON public.payments(from_user_id);
+            CREATE INDEX IF NOT EXISTS idx_payments_to   ON public.payments(to_user_id);
 
             CREATE TABLE IF NOT EXISTS public.expenses (
                 id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -128,6 +136,8 @@ return new class extends Migration
                 amount_due numeric(10,2) NOT NULL,
                 is_paid boolean NOT NULL DEFAULT false,
                 payment_id uuid,
+                created_at timestamptz DEFAULT CURRENT_TIMESTAMP,
+                updated_at timestamptz DEFAULT CURRENT_TIMESTAMP,
                 CONSTRAINT expense_participants_expense_id_user_id_key UNIQUE (expense_id, user_id),
                 CONSTRAINT expense_participants_expense_id_fkey
                     FOREIGN KEY (expense_id) REFERENCES public.expenses(id) ON DELETE CASCADE,
@@ -220,6 +230,14 @@ return new class extends Migration
                 END IF;
 
                 IF NOT EXISTS (
+                    SELECT 1 FROM pg_trigger WHERE tgname = 'set_timestamp' AND tgrelid = 'public.expense_participants'::regclass
+                ) THEN
+                    CREATE TRIGGER set_timestamp
+                    BEFORE UPDATE ON public.expense_participants
+                    FOR EACH ROW EXECUTE FUNCTION public.trigger_set_timestamp();
+                END IF;
+
+                IF NOT EXISTS (
                     SELECT 1 FROM pg_trigger WHERE tgname = 'payments_set_timestamp'
                 ) THEN
                     CREATE TRIGGER payments_set_timestamp
@@ -236,6 +254,7 @@ return new class extends Migration
         DB::unprepared("
             DROP TRIGGER IF EXISTS payments_set_timestamp ON public.payments;
             DROP TRIGGER IF EXISTS set_timestamp ON public.expenses;
+            DROP TRIGGER IF EXISTS set_timestamp ON public.expense_participants;
             DROP TRIGGER IF EXISTS set_timestamp ON public.users;
         ");
 
