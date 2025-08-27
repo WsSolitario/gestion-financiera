@@ -14,8 +14,8 @@ class Payment extends Model
 
     protected $fillable = [
         'id',
-        'payer_id',
-        'receiver_id',
+        'from_user_id',
+        'to_user_id',
         'amount',
         'payment_method',
         'proof_url',
@@ -31,12 +31,12 @@ class Payment extends Model
 
     public function payer()
     {
-        return $this->belongsTo(User::class, 'payer_id');
+        return $this->belongsTo(User::class, 'from_user_id');
     }
 
     public function receiver()
     {
-        return $this->belongsTo(User::class, 'receiver_id');
+        return $this->belongsTo(User::class, 'to_user_id');
     }
 
     public function expenseParticipants()

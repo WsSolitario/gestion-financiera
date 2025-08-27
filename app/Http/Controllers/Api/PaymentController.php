@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use App\Models\Payment;
 
 class PaymentController extends Controller
 {
@@ -117,17 +118,15 @@ class PaymentController extends Controller
     {
         $userId = $request->user()->id;
 
-        $p = DB::table('payments as p')
-            ->leftJoin('users as payer', 'payer.id', '=', 'p.from_user_id')
-            ->leftJoin('users as recv',  'recv.id',  '=', 'p.to_user_id')
-            ->where('p.id', $paymentId)
-            ->select('p.*', 'payer.name as payer_name', 'recv.name as receiver_name')
-            ->first();
+        $model = Payment::with(['payer','receiver'])->find($paymentId);
 
-        if (!$p) return response()->json(['message' => 'Pago no encontrado'], 404);
-        if ($p->from_user_id !== $userId && $p->to_user_id !== $userId) {
+        if (!$model) return response()->json(['message' => 'Pago no encontrado'], 404);
+        if ($model->from_user_id !== $userId && $model->to_user_id !== $userId) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
+
+        $model->payer_name = $model->payer?->name;
+        $model->receiver_name = $model->receiver?->name;
 
         $eps = DB::table('expense_participants as ep')
             ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
@@ -153,7 +152,7 @@ class PaymentController extends Controller
                 ];
             });
 
-        $payload = $this->formatPaymentRow($p, $userId);
+        $payload = $this->formatPaymentRow($model, $userId);
         $payload['participants'] = $eps;
 
         return response()->json($payload, 200);
