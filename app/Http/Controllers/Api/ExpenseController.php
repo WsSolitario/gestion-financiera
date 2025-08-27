@@ -188,15 +188,13 @@ class ExpenseController extends Controller
      */
     public function show(string $expenseId, Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
-
         $expense = DB::table('expenses')->where('id', $expenseId)->first();
         if (!$expense) {
             return response()->json(['message' => 'Gasto no encontrado'], 404);
         }
 
         // Seguridad: solo pagador, participante o miembro del grupo puede ver
-        if (!$this->userInExpenseContext($userId, $expense)) {
+        if (!$this->userInExpenseContext($request->user()->id, $expense)) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
@@ -231,8 +229,6 @@ class ExpenseController extends Controller
      */
     public function update(string $expenseId, Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
-
         $expense = DB::table('expenses')->where('id', $expenseId)->first();
         if (!$expense) {
             return response()->json(['message' => 'Gasto no encontrado'], 404);
@@ -240,7 +236,7 @@ class ExpenseController extends Controller
         if ($expense->status !== 'pending') {
             return response()->json(['message' => 'No se puede editar un gasto no-pending'], 409);
         }
-        if ($expense->payer_id !== $userId) {
+        if ($expense->payer_id !== $request->user()->id) {
             return response()->json(['message' => 'Solo el pagador puede editar este gasto'], 403);
         }
 
@@ -356,13 +352,11 @@ class ExpenseController extends Controller
      */
     public function destroy(string $expenseId, Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
-
         $expense = DB::table('expenses')->where('id', $expenseId)->first();
         if (!$expense) {
             return response()->json(['message' => 'Gasto no encontrado'], 404);
         }
-        if ($expense->payer_id !== $userId) {
+        if ($expense->payer_id !== $request->user()->id) {
             return response()->json(['message' => 'Solo el pagador puede eliminar este gasto'], 403);
         }
 
@@ -379,15 +373,13 @@ class ExpenseController extends Controller
      */
     public function approve(string $expenseId, Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
-
         $expense = DB::table('expenses')->where('id', $expenseId)->first();
         if (!$expense) {
             return response()->json(['message' => 'Gasto no encontrado'], 404);
         }
 
         // Solo pagador puede aprobar globalmente con el esquema actual
-        if ($expense->payer_id !== $userId) {
+        if ($expense->payer_id !== $request->user()->id) {
             return response()->json([
                 'message' => 'Solo el pagador puede aprobar este gasto con el esquema actual.'
             ], 403);
