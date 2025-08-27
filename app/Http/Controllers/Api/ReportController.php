@@ -68,7 +68,7 @@ class ReportController extends Controller
 
         // Entrantes (te pagan a ti)
         $totalIncoming = (clone $paymentsBase)
-            ->where('p.receiver_id', $userId)
+            ->where('p.to_user_id', $userId)
             ->when($groupId, function ($q) use ($groupId) {
                 // limitar a pagos que liquidan EPs de ese grupo
                 $q->whereExists(function ($sub) use ($groupId) {
@@ -82,7 +82,7 @@ class ReportController extends Controller
 
         // Salientes (tú pagas a otros)
         $totalOutgoing = (clone $paymentsBase)
-            ->where('p.payer_id', $userId)
+            ->where('p.from_user_id', $userId)
             ->when($groupId, function ($q) use ($groupId) {
                 $q->whereExists(function ($sub) use ($groupId) {
                     $sub->from('expense_participants as ep')
@@ -123,7 +123,7 @@ class ReportController extends Controller
         // 3) Pagos entrantes
         $seriesIncoming = DB::table('payments as p')
             ->when($paymentStatus !== 'any', fn($q) => $q->where('p.status', $paymentStatus))
-            ->where('p.receiver_id', $userId)
+            ->where('p.to_user_id', $userId)
             ->whereNotNull('p.payment_date')
             ->whereBetween('p.payment_date', [$start->toDateTimeString(), $end->toDateTimeString()])
             ->when($groupId, function ($q) use ($groupId) {
@@ -143,7 +143,7 @@ class ReportController extends Controller
         // 4) Pagos salientes
         $seriesOutgoing = DB::table('payments as p')
             ->when($paymentStatus !== 'any', fn($q) => $q->where('p.status', $paymentStatus))
-            ->where('p.payer_id', $userId)
+            ->where('p.from_user_id', $userId)
             ->whereNotNull('p.payment_date')
             ->whereBetween('p.payment_date', [$start->toDateTimeString(), $end->toDateTimeString()])
             ->when($groupId, function ($q) use ($groupId) {
@@ -195,7 +195,7 @@ class ReportController extends Controller
             ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
             ->join('groups as g', 'g.id', '=', 'e.group_id')
             ->when($paymentStatus !== 'any', fn($q) => $q->where('p.status', $paymentStatus))
-            ->where('p.payer_id', $userId)
+            ->where('p.from_user_id', $userId)
             ->whereNotNull('p.payment_date')
             ->whereBetween('p.payment_date', [$start->toDateTimeString(), $end->toDateTimeString()])
             ->when($groupId, fn($q) => $q->where('e.group_id', $groupId))
@@ -211,7 +211,7 @@ class ReportController extends Controller
             ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
             ->join('groups as g', 'g.id', '=', 'e.group_id')
             ->when($paymentStatus !== 'any', fn($q) => $q->where('p.status', $paymentStatus))
-            ->where('p.receiver_id', $userId)
+            ->where('p.to_user_id', $userId)
             ->whereNotNull('p.payment_date')
             ->whereBetween('p.payment_date', [$start->toDateTimeString(), $end->toDateTimeString()])
             ->when($groupId, fn($q) => $q->where('e.group_id', $groupId))
@@ -223,9 +223,9 @@ class ReportController extends Controller
 
         // Desglose por contraparte (TOP 5)
         $topOutgoingByCounterparty = DB::table('payments as p')
-            ->join('users as u', 'u.id', '=', 'p.receiver_id')
+            ->join('users as u', 'u.id', '=', 'p.to_user_id')
             ->when($paymentStatus !== 'any', fn($q) => $q->where('p.status', $paymentStatus))
-            ->where('p.payer_id', $userId)
+            ->where('p.from_user_id', $userId)
             ->whereNotNull('p.payment_date')
             ->whereBetween('p.payment_date', [$start->toDateTimeString(), $end->toDateTimeString()])
             ->select('u.id as user_id', 'u.name as name', DB::raw('SUM(p.amount) as total'))
@@ -236,9 +236,9 @@ class ReportController extends Controller
             ->map(fn($r) => ['user_id' => $r->user_id, 'name' => $r->name, 'total' => $this->money($r->total)]);
 
         $topIncomingByCounterparty = DB::table('payments as p')
-            ->join('users as u', 'u.id', '=', 'p.payer_id')
+            ->join('users as u', 'u.id', '=', 'p.from_user_id')
             ->when($paymentStatus !== 'any', fn($q) => $q->where('p.status', $paymentStatus))
-            ->where('p.receiver_id', $userId)
+            ->where('p.to_user_id', $userId)
             ->whereNotNull('p.payment_date')
             ->whereBetween('p.payment_date', [$start->toDateTimeString(), $end->toDateTimeString()])
             ->select('u.id as user_id', 'u.name as name', DB::raw('SUM(p.amount) as total'))

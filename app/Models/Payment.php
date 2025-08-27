@@ -10,18 +10,24 @@ class Payment extends Model
     protected $primaryKey = 'id';
     public $incrementing = false; // UUID
     protected $keyType = 'string';
-    public $timestamps = false;   // la tabla no tiene created_at/updated_at
+    public $timestamps = false;   // timestamps manejados manualmente
 
     protected $fillable = [
         'id',
         'from_user_id',
         'to_user_id',
+        'group_id',
         'amount',
+        'unapplied_amount',
+        'note',
         'payment_method',
         'proof_url',
+        'evidence_url',
         'signature',
         'status',
         'payment_date',
+        'created_at',
+        'updated_at',
     ];
 
     protected $casts = [
