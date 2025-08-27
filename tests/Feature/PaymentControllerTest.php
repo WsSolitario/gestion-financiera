@@ -6,6 +6,9 @@ use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use App\Models\User;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
+use App\Jobs\SendPushNotification;
 
 class PaymentControllerTest extends TestCase
 {
@@ -27,5 +30,44 @@ class PaymentControllerTest extends TestCase
                  ->assertJson([
                      'data' => [],
                  ]);
+    }
+
+    public function test_approve_dispatches_push_job(): void
+    {
+        Bus::fake();
+
+        $payer = User::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Payer',
+            'email' => 'payer@example.com',
+        ]);
+
+        $receiver = User::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Receiver',
+            'email' => 'receiver@example.com',
+        ]);
+
+        $paymentId = (string) Str::uuid();
+
+        DB::table('payments')->insert([
+            'id' => $paymentId,
+            'from_user_id' => $payer->id,
+            'to_user_id' => $receiver->id,
+            'amount' => 10,
+            'status' => 'pending',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($receiver, 'sanctum');
+
+        $response = $this->postJson("/api/payments/{$paymentId}/approve");
+
+        $response->assertStatus(200);
+
+        Bus::assertDispatched(SendPushNotification::class, function ($job) use ($payer) {
+            return $job->userId === $payer->id && $job->title === 'Pago aprobado';
+        });
     }
 }
