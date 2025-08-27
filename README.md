@@ -6,6 +6,8 @@ gastos y saldar deudas mediante pagos aprobados.
 
 ## Instalación
 
+Este proyecto utiliza **PostgreSQL** como motor de base de datos.
+
 1. Clonar el repositorio y entrar al directorio del proyecto.
 2. Instalar dependencias de PHP y JavaScript:
    ```bash
@@ -17,8 +19,7 @@ gastos y saldar deudas mediante pagos aprobados.
    cp .env.example .env
    php artisan key:generate
    ```
-4. Si se usa la base de datos SQLite por defecto, crear el archivo
-   `database/database.sqlite` y ejecutar las migraciones:
+4. Configurar la conexión a PostgreSQL en el archivo `.env` y ejecutar las migraciones:
    ```bash
    php artisan migrate
    ```
@@ -26,6 +27,33 @@ gastos y saldar deudas mediante pagos aprobados.
    ```bash
    php artisan serve
    ```
+
+### PostgreSQL con Docker Compose
+
+Para levantar una instancia local de PostgreSQL se puede utilizar `docker-compose`:
+
+```yaml
+version: "3.9"
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: gestion_financiera
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+volumes:
+  db-data:
+```
+
+Ejecutar con:
+
+```bash
+docker compose up -d db
+```
 
 ## Configuración del `.env`
 
@@ -36,11 +64,25 @@ Variables principales:
 | `APP_NAME`      | Nombre mostrado de la aplicación.                |
 | `APP_URL`       | URL base del backend.                            |
 | `APP_KEY`       | Clave generada con `php artisan key:generate`.   |
-| `DB_CONNECTION` | Motor de base de datos (por defecto `sqlite`).   |
+| `DB_CONNECTION` | Motor de base de datos (usar `pgsql`).           |
+| `DB_HOST`       | Host del servidor PostgreSQL.                    |
+| `DB_PORT`       | Puerto del servidor (por defecto `5432`).        |
+| `DB_DATABASE`   | Nombre de la base de datos.                      |
+| `DB_USERNAME`   | Usuario con acceso a la base.                    |
+| `DB_PASSWORD`   | Contraseña del usuario.                          |
 
-Para SQLite basta con crear el archivo de base de datos mencionado
-arriba. Si se usa MySQL u otro motor, configurar host, puerto, usuario y
-contraseña correspondientes.
+Ejemplo de configuración:
+
+```env
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=gestion_financiera
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+```
+
+El proyecto está pensado para PostgreSQL. Ajusta las variables anteriores según tu entorno.
 
 ## Comandos básicos
 
