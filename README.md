@@ -52,6 +52,10 @@ contraseña correspondientes.
 | `npm run dev`              | Compila activos front‑end con Vite.              |
 | `php artisan test`         | Ejecuta la suite de pruebas.                     |
 
+## Documentación de la API
+
+La documentación completa de los endpoints se encuentra en [docs/API.md](docs/API.md).
+
 ## Endpoints principales
 
 Todos los endpoints se exponen bajo `/api` y requieren autenticación con
