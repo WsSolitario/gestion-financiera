@@ -1,0 +1,258 @@
+@baseUrl = http://localhost/api
+@token = {{token}}
+
+### Register
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "name": "Juan Pérez",
+  "email": "juan@example.com",
+  "password": "secret123",
+  "password_confirmation": "secret123",
+  "invitation_token": "ABC123"
+}
+
+### Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "juan@example.com",
+  "password": "secret123"
+}
+
+### Logout current session
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{token}}
+
+### Logout all sessions
+POST {{baseUrl}}/auth/logout?all=true
+Authorization: Bearer {{token}}
+
+### Get current user
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+
+### Update current user
+PUT {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Nuevo Nombre"
+}
+
+### Change password
+PUT {{baseUrl}}/users/me/password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "current_password": "secret123",
+  "password": "nuevo123",
+  "password_confirmation": "nuevo123"
+}
+
+### Delete account
+DELETE {{baseUrl}}/users/me
+Authorization: Bearer {{token}}
+
+### List groups
+GET {{baseUrl}}/groups
+Authorization: Bearer {{token}}
+
+### Create group
+POST {{baseUrl}}/groups
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Viaje a Madrid",
+  "description": "Gastos del viaje"
+}
+
+### Get group
+GET {{baseUrl}}/groups/{{groupId}}
+Authorization: Bearer {{token}}
+
+### Update group
+PUT {{baseUrl}}/groups/{{groupId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Nuevo nombre"
+}
+
+### Delete group
+DELETE {{baseUrl}}/groups/{{groupId}}
+Authorization: Bearer {{token}}
+
+### Add member
+POST {{baseUrl}}/groups/{{groupId}}/members
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "user_id": "11111111-2222-3333-4444-555555555555",
+  "role": "member"
+}
+
+### Update member role
+PUT {{baseUrl}}/groups/{{groupId}}/members/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "role": "admin"
+}
+
+### Remove member
+DELETE {{baseUrl}}/groups/{{groupId}}/members/{{userId}}
+Authorization: Bearer {{token}}
+
+### Group balances
+GET {{baseUrl}}/groups/{{groupId}}/balances
+Authorization: Bearer {{token}}
+
+### Settlement preview
+POST {{baseUrl}}/groups/{{groupId}}/settlements/preview
+Authorization: Bearer {{token}}
+
+### List invitations
+GET {{baseUrl}}/invitations?mine=true
+Authorization: Bearer {{token}}
+
+### Create invitation
+POST {{baseUrl}}/invitations
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "invitee_email": "amigo@example.com",
+  "group_id": "11111111-2222-3333-4444-555555555555"
+}
+
+### Get invitation
+GET {{baseUrl}}/invitations/{{invitationId}}
+Authorization: Bearer {{token}}
+
+### Delete invitation
+DELETE {{baseUrl}}/invitations/{{invitationId}}
+Authorization: Bearer {{token}}
+
+### Accept invitation
+POST {{baseUrl}}/invitations/accept
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "token": "ABC123"
+}
+
+### Verify invitation token
+GET {{baseUrl}}/invitations/token/{{token}}
+
+### List expenses
+GET {{baseUrl}}/expenses?groupId={{groupId}}
+Authorization: Bearer {{token}}
+
+### Create expense
+POST {{baseUrl}}/expenses
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Cena",
+  "total_amount": 100.5,
+  "group_id": "11111111-2222-3333-4444-555555555555",
+  "expense_date": "2023-05-01",
+  "has_ticket": true,
+  "ticket_image_url": "https://example.com/ticket.jpg",
+  "participants": [
+    { "user_id": "22222222-3333-4444-5555-666666666666", "amount_due": 50.25 },
+    { "user_id": "33333333-4444-5555-6666-777777777777", "amount_due": 50.25 }
+  ]
+}
+
+### Get expense
+GET {{baseUrl}}/expenses/{{expenseId}}
+Authorization: Bearer {{token}}
+
+### Update expense
+PUT {{baseUrl}}/expenses/{{expenseId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "description": "Cena actualizada"
+}
+
+### Delete expense
+DELETE {{baseUrl}}/expenses/{{expenseId}}
+Authorization: Bearer {{token}}
+
+### Approve expense
+POST {{baseUrl}}/expenses/{{expenseId}}/approve
+Authorization: Bearer {{token}}
+
+### Payments due
+GET {{baseUrl}}/payments/due?group_id={{groupId}}
+Authorization: Bearer {{token}}
+
+### List payments
+GET {{baseUrl}}/payments?status=pending
+Authorization: Bearer {{token}}
+
+### Create payment
+POST {{baseUrl}}/payments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "group_id": "11111111-2222-3333-4444-555555555555",
+  "from_user_id": "22222222-3333-4444-5555-666666666666",
+  "to_user_id": "33333333-4444-5555-6666-777777777777",
+  "amount": 25.5,
+  "note": "Pago por comida"
+}
+
+### Get payment
+GET {{baseUrl}}/payments/{{paymentId}}
+Authorization: Bearer {{token}}
+
+### Update payment
+PUT {{baseUrl}}/payments/{{paymentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "note": "Nota actualizada"
+}
+
+### Approve payment
+POST {{baseUrl}}/payments/{{paymentId}}/approve
+Authorization: Bearer {{token}}
+
+### Reject payment
+POST {{baseUrl}}/payments/{{paymentId}}/reject
+Authorization: Bearer {{token}}
+
+### Register device
+POST {{baseUrl}}/notifications/register-device
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "device_token": "TOKEN123",
+  "device_type": "android"
+}
+
+### Dashboard summary
+GET {{baseUrl}}/dashboard/summary
+Authorization: Bearer {{token}}
+
+### Reports
+GET {{baseUrl}}/reports?granularity=month
+Authorization: Bearer {{token}}
