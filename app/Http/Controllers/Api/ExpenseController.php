@@ -13,7 +13,6 @@ use Carbon\Carbon;
 use App\Jobs\ProcessExpenseOcr;
 
 use App\Models\Expense;
-use App\Models\ExpenseParticipant;
 
 class ExpenseController extends Controller
 {
