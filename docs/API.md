@@ -1,0 +1,202 @@
+# Documentación de la API
+
+Todas las rutas están bajo el prefijo `/api`. A menos que se indique lo contrario, los endpoints requieren autenticación con un token de Laravel Sanctum enviado en el encabezado `Authorization: Bearer {token}`.
+
+## Autenticación
+
+### POST /api/auth/register
+Registra un usuario a partir de una invitación.
+
+**Body**
+- `name` (string, requerido)
+- `email` (string, requerido)
+- `password` (string, min 8, requerido)
+- `password_confirmation` (string, debe coincidir)
+- `invitation_token` (string, requerido)
+- `profile_picture_url` (url, opcional)
+- `phone_number` (string, opcional)
+
+### POST /api/auth/login
+Inicia sesión y devuelve un token Sanctum.
+
+**Body**
+- `email` (string, requerido)
+- `password` (string, requerido)
+
+### POST /api/auth/logout
+Cierra la sesión actual. Agregar `?all=true` para revocar todos los tokens del usuario.
+
+## Usuarios
+
+### GET /api/users/me
+Devuelve los datos del usuario autenticado.
+
+### PUT /api/users/me
+Actualiza el perfil del usuario.
+
+**Body** (todos opcionales)
+- `name`
+- `email`
+- `profile_picture_url`
+- `phone_number`
+
+### PUT /api/users/me/password
+Actualiza la contraseña del usuario.
+
+**Body**
+- `current_password` (string, requerido)
+- `password` (string, min 8, confirmado)
+
+### DELETE /api/users/me
+Elimina la cuenta del usuario y revoca sus tokens.
+
+## Grupos
+
+### GET /api/groups
+Lista los grupos a los que pertenece el usuario.
+
+### POST /api/groups
+Crea un nuevo grupo.
+
+**Body**
+- `name` (string, requerido)
+- `description` (string, opcional)
+
+### GET /api/groups/{group}
+Muestra los detalles de un grupo y sus miembros.
+
+### PUT /api/groups/{group}
+Actualiza nombre o descripción. Requiere rol `owner` o `admin`.
+
+### DELETE /api/groups/{group}
+Elimina el grupo. Solo el `owner`.
+
+### POST /api/groups/{group}/members
+Agrega un miembro existente al grupo (owner/admin).
+
+**Body**
+- `user_id` (uuid, requerido)
+- `role` (`member`|`admin`, opcional)
+
+### PUT /api/groups/{group}/members/{user}
+Cambia el rol de un miembro. Permite transferir propiedad con `role=owner`.
+
+### DELETE /api/groups/{group}/members/{user}
+Elimina a un miembro del grupo.
+
+### GET /api/groups/{group}/balances
+Devuelve el balance de cada miembro del grupo.
+
+### POST /api/groups/{group}/settlements/preview
+Sugiere transferencias para saldar balances.
+
+## Invitaciones
+
+### GET /api/invitations
+Lista invitaciones. Admite `?mine=true` para ver invitaciones dirigidas a mi email y `?groupId=UUID` para filtrar por grupo.
+
+### POST /api/invitations
+Crea una invitación para un grupo (owner/admin).
+
+**Body**
+- `invitee_email` (string, requerido)
+- `group_id` (uuid, requerido)
+- `expires_in_days` (int, opcional, por defecto 7)
+
+### GET /api/invitations/{id}
+Muestra una invitación específica.
+
+### DELETE /api/invitations/{id}
+Marca la invitación como expirada.
+
+### POST /api/invitations/accept
+Acepta una invitación mediante token.
+
+**Body**
+- `token` (string, requerido)
+
+### GET /api/invitations/token/{token}
+Verifica un token de invitación (público, sin autenticación).
+
+## Gastos
+
+### GET /api/expenses
+Lista gastos donde el usuario es pagador o participante.
+Filtros opcionales: `?groupId`, `?startDate`, `?endDate`.
+
+### POST /api/expenses
+Registra un nuevo gasto con sus participantes.
+
+**Body**
+- `description` (string, requerido)
+- `total_amount` (number, requerido)
+- `group_id` (uuid, requerido)
+- `expense_date` (YYYY-MM-DD, requerido)
+- `has_ticket` (boolean, requerido)
+- `ticket_image_url` (string, requerido si `has_ticket=true`)
+- `participants` (array de `{ user_id, amount_due }`, requerido)
+
+### GET /api/expenses/{id}
+Muestra un gasto específico.
+
+### PUT /api/expenses/{id}
+Actualiza un gasto existente.
+
+### DELETE /api/expenses/{id}
+Elimina un gasto (pagador).
+
+### POST /api/expenses/{id}/approve
+El pagador aprueba el gasto para que se pueda cobrar.
+
+## Pagos
+
+### GET /api/payments/due
+Resumen de deudas pendientes para el usuario autenticado. Acepta `?group_id`.
+
+### GET /api/payments
+Lista pagos enviados o recibidos.
+Filtros opcionales: `?status`, `?direction`, `?groupId`, `?startDate`, `?endDate`.
+
+### POST /api/payments
+Crea un pago entre dos miembros de un grupo.
+
+**Body**
+- `group_id` (uuid, requerido)
+- `from_user_id` (uuid, requerido, debe ser el usuario actual)
+- `to_user_id` (uuid, requerido)
+- `amount` (number, requerido)
+- `note` (string, opcional)
+- `evidence_url` (url, opcional)
+
+### GET /api/payments/{id}
+Muestra detalles de un pago.
+
+### PUT /api/payments/{id}
+Actualiza un pago pendiente.
+
+### POST /api/payments/{id}/approve
+El receptor aprueba el pago y aplica el monto a deudas.
+
+### POST /api/payments/{id}/reject
+El receptor rechaza el pago y libera deudas asociadas.
+
+## Notificaciones
+
+### POST /api/notifications/register-device
+Registra o actualiza un dispositivo para recibir notificaciones.
+
+**Body**
+- `device_token` (string, requerido)
+- `device_type` (`android`|`ios`|`web`, requerido)
+
+## Dashboard
+
+### GET /api/dashboard/summary
+Resumen de deudas, pagos y actividad reciente. Filtros opcionales: `?groupId`, `?startDate`, `?endDate`.
+
+## Reportes
+
+### GET /api/reports
+Reportes agregados de gastos y pagos.
+Filtros: `?groupId`, `?startDate`, `?endDate`, `?granularity=day|month|auto`, `?paymentStatus=completed|pending|any`.
+
