@@ -52,6 +52,35 @@ contraseña correspondientes.
 | `npm run dev`              | Compila activos front‑end con Vite.              |
 | `php artisan test`         | Ejecuta la suite de pruebas.                     |
 
+## Datos de prueba
+
+Para generar datos iniciales, incluyendo un grupo de ejemplo y una invitación,
+ejecutar:
+
+```bash
+php artisan migrate --seed --class=DevSeeder
+```
+
+La consola mostrará un token de invitación, por ejemplo:
+
+```
+Token de invitación para newuser@example.com:
+4f3b59d2c4e148d9a5b2bdf5b6c177a3e0b8b50d71675dc1a1e4b42e2c596ef8
+```
+
+Con este token se puede registrar un usuario con el endpoint:
+
+```http
+POST /api/auth/register
+{
+  "name": "Nuevo Usuario",
+  "email": "newuser@example.com",
+  "password": "secret1234",
+  "password_confirmation": "secret1234",
+  "invitation_token": "4f3b59d2c4e148d9a5b2bdf5b6c177a3e0b8b50d71675dc1a1e4b42e2c596ef8"
+}
+```
+
 ## Documentación de la API
 
 La documentación completa de los endpoints se encuentra en [docs/API.md](docs/API.md).
