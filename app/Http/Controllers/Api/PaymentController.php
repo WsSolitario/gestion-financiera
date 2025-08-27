@@ -278,7 +278,7 @@ class PaymentController extends Controller
         ], 200);
     }
 
-    // NUEVO: rechazar pago pendiente (libera EPs)
+    // Rechaza un pago pendiente y libera los EPs asociados
     public function reject(string $paymentId, Request $request): JsonResponse
     {
         $userId = $request->user()->id;
