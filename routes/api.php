@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\BalanceController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\RecurringPaymentController;
 
 /**
  * RUTAS PÚBLICAS (sin auth)
@@ -66,6 +67,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('payments', PaymentController::class)->only(['index','store','show','update']);
     Route::post('payments/{payment}/approve', [PaymentController::class, 'approve']);
     Route::post('payments/{payment}/reject', [PaymentController::class, 'reject']);
+
+    // Pagos recurrentes
+    Route::apiResource('recurring-payments', RecurringPaymentController::class)->only(['index','store']);
 
 
     // Notificaciones
