@@ -180,6 +180,20 @@ El receptor aprueba el pago y aplica el monto a deudas.
 ### POST /api/payments/{id}/reject
 El receptor rechaza el pago y libera deudas asociadas.
 
+## Pagos recurrentes
+
+### GET /api/recurring-payments
+Lista pagos recurrentes creados por el usuario o compartidos con él.
+
+### POST /api/recurring-payments
+Crea un nuevo pago recurrente para recordar deudas periódicas.
+
+**Body**
+- `description` (string, requerido)
+- `amount_monthly` (number, requerido, monto a pagar cada mes)
+- `months` (integer, requerido, duración en meses)
+- `shared_with` (array de UUID, opcional, usuarios invitados como lectores)
+
 ## Notificaciones
 
 ### POST /api/notifications/register-device

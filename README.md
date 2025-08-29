@@ -2,7 +2,8 @@
 
 Sistema construido con Laravel para administrar gastos compartidos entre
 usuarios. Permite registrar grupos, invitar participantes, registrar
-gastos y saldar deudas mediante pagos aprobados.
+gastos, saldar deudas mediante pagos aprobados y configurar pagos
+recurrentes personales.
 
 ## Instalación
 
@@ -197,6 +198,11 @@ Laravel Sanctum salvo donde se indique.
 - `PUT /api/payments/{id}` – actualiza un pago pendiente (pagador).
 - `POST /api/payments/{id}/approve` – receptor confirma y cierra el pago.
 - `POST /api/payments/{id}/reject` – receptor rechaza el pago y libera deudas.
+
+### Pagos recurrentes
+
+- `GET /api/recurring-payments` – lista pagos recurrentes propios o compartidos.
+- `POST /api/recurring-payments` – crea un pago recurrente y permite compartirlo con otros usuarios.
 
 ## Flujos de trabajo
 
