@@ -83,4 +83,23 @@ class AuthControllerTest extends TestCase
                 'user' => ['id', 'name', 'email'],
             ]);
     }
+
+    public function test_inactive_user_cannot_login(): void
+    {
+        $password = 'secret123';
+        $user = User::factory()->create([
+            'password_hash' => Hash::make($password),
+            'is_active' => false,
+        ]);
+
+        $response = $this->postJson('/api/auth/login', [
+            'email' => $user->email,
+            'password' => $password,
+        ]);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'message' => 'Cuenta desactivada',
+            ]);
+    }
 }

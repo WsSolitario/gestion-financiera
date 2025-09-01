@@ -141,6 +141,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'Credenciales inválidas'], 401);
         }
 
+        if (! $user->is_active) {
+            return response()->json(['message' => 'Cuenta desactivada'], 403);
+        }
+
         $deviceName = $request->header('X-Device-Name', 'api');
         $token = $user->createToken($deviceName)->plainTextToken;
 

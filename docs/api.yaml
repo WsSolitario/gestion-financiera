@@ -77,6 +77,10 @@ paths:
       responses:
         '200':
           description: Token generado
+        '401':
+          description: Credenciales inválidas
+        '403':
+          description: Cuenta desactivada
   /auth/logout:
     post:
       summary: Cierra la sesión actual
@@ -121,10 +125,10 @@ paths:
         '200':
           description: Perfil actualizado
     delete:
-      summary: Elimina la cuenta del usuario y revoca sus tokens
+      summary: Desactiva la cuenta del usuario y revoca sus tokens
       responses:
         '204':
-          description: Cuenta eliminada
+          description: Cuenta desactivada
   /users/me/password:
     put:
       summary: Actualiza la contraseña del usuario

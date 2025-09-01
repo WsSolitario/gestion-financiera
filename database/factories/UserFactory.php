@@ -20,6 +20,7 @@ class UserFactory extends Factory
             'password_hash' => Hash::make('password'),
             'profile_picture_url' => null,
             'phone_number' => null,
+            'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
         ];

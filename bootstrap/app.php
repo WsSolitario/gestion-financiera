@@ -14,6 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         // No redirigir invitados (devolver 401 JSON en APIs)
         $middleware->redirectGuestsTo(fn() => null);
+
+        $middleware->alias([
+            'active' => \App\Http\Middleware\EnsureUserIsActive::class,
+        ]);
     })
 
     ->withExceptions(function (Exceptions $exceptions) {
