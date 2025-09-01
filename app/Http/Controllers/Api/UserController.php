@@ -112,6 +112,6 @@ class UserController extends Controller
         });
 
         // 204 No Content: sin cuerpo de respuesta
-        return response()->noContent();
+        return response()->json(null, 204);
     }
 }
