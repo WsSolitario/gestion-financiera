@@ -181,6 +181,13 @@ Verifica un token de invitación (público, sin autenticación).
 Lista gastos donde el usuario es pagador o participante.
 Filtros opcionales: `?groupId`, `?startDate`, `?endDate`.
 
+Cada gasto contiene un campo `status` con los posibles valores:
+
+- `pending`: registrado pero aún no aprobado por el pagador.
+- `approved`: aprobado y pendiente de pago por los participantes.
+- `rejected`: descartado por el pagador.
+- `completed`: todos los participantes han pagado su parte.
+
 ### POST /api/expenses
 Registra un nuevo gasto con sus participantes.
 
@@ -203,7 +210,9 @@ Actualiza un gasto existente.
 Elimina un gasto (pagador).
 
 ### POST /api/expenses/{id}/approve
-El pagador aprueba el gasto para que se pueda cobrar.
+El pagador aprueba el gasto para que se pueda cobrar. Cuando todos los
+participantes hayan pagado sus partes, el gasto cambiará automáticamente al
+estado `completed`.
 
 ## Pagos
 

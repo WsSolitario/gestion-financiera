@@ -410,6 +410,7 @@ paths:
   /expenses:
     get:
       summary: Lista gastos donde el usuario es pagador o participante
+      description: El campo `status` puede ser pending, approved, rejected o completed
       parameters:
         - in: query
           name: groupId
@@ -541,7 +542,7 @@ paths:
         schema:
           type: string
     post:
-      summary: El pagador aprueba el gasto
+      summary: El pagador aprueba el gasto (se completará cuando todos paguen)
       responses:
         '200':
           description: Gasto aprobado

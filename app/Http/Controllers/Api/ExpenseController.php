@@ -22,6 +22,9 @@ class ExpenseController extends Controller
      * GET /api/expenses
      * Lista gastos donde el usuario es pagador o participante.
      * Filtros opcionales: ?groupId=UUID&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+     *
+     * Cada gasto incluye un campo `status` que puede ser `pending`, `approved`,
+     * `rejected` o `completed` cuando todos los participantes pagaron su parte.
      */
     public function index(Request $request): JsonResponse
     {
@@ -370,6 +373,8 @@ class ExpenseController extends Controller
     /**
      * POST /api/expenses/{expenseId}/approve
      * Aprobación global del gasto -> por ahora, SOLO el pagador puede pasar a 'approved'.
+     * Una vez que todos los participantes paguen su parte, el gasto se marcará
+     * automáticamente como `completed`.
      */
     public function approve(string $expenseId, Request $request): JsonResponse
     {
