@@ -72,7 +72,7 @@ Registra un usuario utilizando un token de registro.
 - `phone_number` (string, opcional)
 
 ### POST /api/auth/login
-Inicia sesión y devuelve un token Sanctum.
+Inicia sesión y devuelve un token Sanctum. Usuarios desactivados no pueden iniciar sesión.
 
 **Body**
 - `email` (string, requerido)
@@ -103,7 +103,9 @@ Actualiza la contraseña del usuario.
 - `password` (string, min 8, confirmado)
 
 ### DELETE /api/users/me
-Elimina la cuenta del usuario y revoca sus tokens.
+Desactiva la cuenta del usuario y revoca sus tokens.
+El usuario no podrá iniciar sesión mientras esté inactivo.
+Actualmente no hay un endpoint para reactivar la cuenta; contacta al soporte si necesitas reactivarla.
 
 ## Grupos
 

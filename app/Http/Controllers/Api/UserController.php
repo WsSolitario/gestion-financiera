@@ -103,11 +103,12 @@ class UserController extends Controller
         $user = $request->user();
 
         DB::transaction(function () use ($user) {
-            // Revocar todos los tokens antes de borrar
+            // Revocar todos los tokens
             $user->tokens()->delete();
 
-            // Eliminar usuario (tu BD maneja cascadas y set null según diseño)
-            $user->delete();
+            // Desactivar usuario
+            $user->is_active = false;
+            $user->save();
         });
 
         // 204 No Content: sin cuerpo de respuesta
