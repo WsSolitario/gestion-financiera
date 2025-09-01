@@ -80,6 +80,11 @@ class InvitationExpensePaymentFlowTest extends TestCase
             'is_paid' => true,
         ]);
 
+        $this->assertDatabaseHas('expenses', [
+            'id' => $expenseId,
+            'status' => 'completed',
+        ]);
+
         // Another payment to reject
         $this->actingAs($member, 'sanctum');
         $payment2 = $this->postJson('/api/payments', [

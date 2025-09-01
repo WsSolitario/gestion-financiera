@@ -17,7 +17,7 @@ return new class extends Migration
                     CREATE TYPE public.group_role AS ENUM ('owner','admin','member');
                 END IF;
                 IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'expense_status') THEN
-                    CREATE TYPE public.expense_status AS ENUM ('pending','approved','rejected');
+                    CREATE TYPE public.expense_status AS ENUM ('pending','approved','rejected','completed');
                 END IF;
                 IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'ocr_processing_status') THEN
                     CREATE TYPE public.ocr_processing_status AS ENUM ('pending','completed','failed','skipped');

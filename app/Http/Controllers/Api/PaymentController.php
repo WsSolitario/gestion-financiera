@@ -216,6 +216,8 @@ class PaymentController extends Controller
                 ->lockForUpdate()
                 ->get();
 
+            $affectedExpenseIds = [];
+
             foreach ($pending as $row) {
                 if ($remaining <= 0) break;
                 $due = (int) round($row->amount_due * 100);
@@ -245,6 +247,7 @@ class PaymentController extends Controller
                 ];
 
                 $remaining -= $apply;
+                $affectedExpenseIds[] = $row->expense_id;
             }
 
             DB::table('payments')->where('id', $payment->id)->update([
@@ -253,6 +256,17 @@ class PaymentController extends Controller
                 'unapplied_amount' => $remaining / 100,
                 'updated_at' => now(),
             ]);
+
+            foreach (array_unique($affectedExpenseIds) as $expenseId) {
+                $allPaid = !DB::table('expense_participants')
+                    ->where('expense_id', $expenseId)
+                    ->where('is_paid', false)
+                    ->exists();
+
+                if ($allPaid) {
+                    DB::table('expenses')->where('id', $expenseId)->update(['status' => 'completed']);
+                }
+            }
         });
 
         $updated = DB::table('payments as p')
