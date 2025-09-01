@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Models\Payment;
 use App\Jobs\SendPushNotification;
+use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
 {
@@ -74,6 +75,7 @@ class PaymentController extends Controller
             'amount'       => ['required', 'numeric', 'gt:0'],
             'note'         => ['sometimes', 'nullable', 'string'],
             'evidence_url' => ['sometimes', 'nullable', 'url'],
+            'payment_method' => ['sometimes', 'nullable', 'string', Rule::in(['cash', 'transfer'])],
         ]);
 
         if ($data['from_user_id'] !== $userId) {
@@ -97,6 +99,7 @@ class PaymentController extends Controller
             'amount' => $data['amount'],
             'note' => $data['note'] ?? null,
             'evidence_url' => $data['evidence_url'] ?? null,
+            'payment_method' => $data['payment_method'] ?? null,
             'status' => 'pending',
             'created_at' => now(),
             'updated_at' => now(),
@@ -169,7 +172,7 @@ class PaymentController extends Controller
         if ($p->status !== 'pending') return response()->json(['message' => 'Solo puedes actualizar pagos pendientes'], 409);
 
         $data = $request->validate([
-            'payment_method' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'payment_method' => ['sometimes', 'nullable', 'string', Rule::in(['cash', 'transfer'])],
             'proof_url'      => ['sometimes', 'nullable', 'url'],
             'signature'      => ['sometimes', 'nullable', 'string'],
         ]);
@@ -375,6 +378,7 @@ class PaymentController extends Controller
             'amount'        => $this->money($p->amount),
             'status'        => $p->status,
             'payment_date'  => $p->payment_date,
+            'payment_method' => $p->payment_method,
             'note'          => $p->note,
             'evidence_url'  => $p->evidence_url,
             'from_user_id'  => $p->from_user_id,
