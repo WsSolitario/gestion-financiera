@@ -16,13 +16,18 @@ class RecurringPayment extends Model
     protected $fillable = [
         'id',
         'user_id',
+        'title',
         'description',
         'amount_monthly',
         'months',
+        'start_date',
+        'day_of_month',
+        'reminder_days_before',
     ];
 
     protected $casts = [
         'amount_monthly' => 'decimal:2',
+        'start_date' => 'date',
     ];
 
     public function owner()

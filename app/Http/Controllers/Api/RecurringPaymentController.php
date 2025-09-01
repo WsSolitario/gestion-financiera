@@ -32,11 +32,15 @@ class RecurringPaymentController extends Controller
         $userId = $request->user()->id;
 
         $data = $request->validate([
-            'description'    => ['required', 'string'],
-            'amount_monthly' => ['required', 'numeric', 'gt:0'],
-            'months'         => ['required', 'integer', 'min:1'],
-            'shared_with'    => ['sometimes', 'array'],
-            'shared_with.*'  => ['uuid', 'exists:users,id'],
+            'title'               => ['required', 'string'],
+            'description'         => ['required', 'string'],
+            'amount_monthly'      => ['required', 'numeric', 'gt:0'],
+            'months'              => ['required', 'integer', 'min:1'],
+            'start_date'          => ['required', 'date'],
+            'day_of_month'        => ['required', 'integer', 'between:1,31'],
+            'reminder_days_before'=> ['required', 'integer', 'min:0'],
+            'shared_with'         => ['sometimes', 'array'],
+            'shared_with.*'       => ['uuid', 'exists:users,id'],
         ]);
 
         $id = (string) Str::uuid();
@@ -44,12 +48,16 @@ class RecurringPaymentController extends Controller
         DB::transaction(function () use ($data, $id, $userId) {
             DB::table('recurring_payments')->insert([
                 'id'             => $id,
-                'user_id'        => $userId,
-                'description'    => $data['description'],
-                'amount_monthly' => $data['amount_monthly'],
-                'months'         => $data['months'],
-                'created_at'     => now(),
-                'updated_at'     => now(),
+                'user_id'             => $userId,
+                'title'               => $data['title'],
+                'description'         => $data['description'],
+                'amount_monthly'      => $data['amount_monthly'],
+                'months'              => $data['months'],
+                'start_date'          => $data['start_date'],
+                'day_of_month'        => $data['day_of_month'],
+                'reminder_days_before'=> $data['reminder_days_before'],
+                'created_at'          => now(),
+                'updated_at'          => now(),
             ]);
 
             if (!empty($data['shared_with'])) {
