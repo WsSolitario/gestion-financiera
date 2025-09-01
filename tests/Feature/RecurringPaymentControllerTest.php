@@ -28,14 +28,18 @@ class RecurringPaymentControllerTest extends TestCase
         $this->actingAs($owner, 'sanctum');
 
         $payload = [
+            'title' => 'Pago tarjeta',
             'description' => 'Pago tarjeta',
             'amount_monthly' => 100.50,
             'months' => 12,
+            'start_date' => '2025-01-01',
+            'day_of_month' => 1,
+            'reminder_days_before' => 3,
             'shared_with' => [$viewer->id],
         ];
 
         $resp = $this->postJson('/api/recurring-payments', $payload);
-        $resp->assertStatus(201)->assertJsonPath('data.description', 'Pago tarjeta');
+        $resp->assertStatus(201)->assertJsonPath('data.title', 'Pago tarjeta');
 
         // Owner can list it
         $listOwner = $this->getJson('/api/recurring-payments');

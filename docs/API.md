@@ -252,9 +252,13 @@ Lista pagos recurrentes creados por el usuario o compartidos con él.
 Crea un nuevo pago recurrente para recordar deudas periódicas.
 
 **Body**
+- `title` (string, requerido)
 - `description` (string, requerido)
 - `amount_monthly` (number, requerido, monto a pagar cada mes)
 - `months` (integer, requerido, duración en meses)
+- `start_date` (date, requerido, fecha del primer pago)
+- `day_of_month` (integer 1-31, requerido, día del mes para el cobro)
+- `reminder_days_before` (integer, requerido, días de anticipación para recordar)
 - `shared_with` (array de UUID, opcional, usuarios invitados como lectores)
 
 ## Notificaciones
