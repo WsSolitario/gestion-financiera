@@ -206,6 +206,13 @@ Laravel Sanctum salvo donde se indique.
 
 ## Flujos de trabajo
 
+### Registro y creación de grupos
+1. Solicitar o recibir un token de invitación.
+2. Registrar al usuario con `POST /api/auth/register`.
+3. Crear un grupo con `POST /api/groups`.
+4. Generar invitaciones con `POST /api/invitations` y enviar los token(s) resultantes.
+5. Si la persona invitada aún no está registrada, se le debe proporcionar también un token de registro.
+
 ### Invitaciones
 1. Un propietario o administrador del grupo crea una invitación.
 2. El invitado verifica el token (`GET /api/invitations/token/{token}`).
