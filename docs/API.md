@@ -18,9 +18,9 @@ Todas las rutas están bajo el prefijo `/api`. A menos que se indique lo contrar
 
    El endpoint devuelve un token de invitación (`token`) que se enviará al invitado.
 
-2. **Registrar un usuario con el token**
+2. **Registrar un usuario con los tokens**
 
-   El invitado usa el token recibido para registrarse vía `POST /api/auth/register`.
+   El invitado usa el `registration_token` recibido y opcionalmente el `group_token` para registrarse vía `POST /api/auth/register`.
 
    ```http
    POST /api/auth/register
@@ -29,7 +29,8 @@ Todas las rutas están bajo el prefijo `/api`. A menos que se indique lo contrar
      "email": "nuevo@correo.com",
      "password": "secreto",
      "password_confirmation": "secreto",
-     "invitation_token": "TOKEN"
+     "registration_token": "REGTOKEN",
+     "invitation_token": "GROUPTOKEN" // opcional
    }
    ```
 
@@ -51,21 +52,22 @@ Todas las rutas están bajo el prefijo `/api`. A menos que se indique lo contrar
    Si el correo no está asociado a un usuario, la invitación genera **dos** tokens:
 
    - `registration_token`: para crear la cuenta mediante `POST /api/auth/register`.
-   - `group_token`: para unirse al grupo después del registro mediante `POST /api/invitations/accept`.
+   - `group_token` (`invitation_token`): para unirse al grupo después del registro mediante `POST /api/invitations/accept`.
 
    El cliente debe manejar ambos tokens en el flujo de alta de usuario.
 
 ## Autenticación
 
 ### POST /api/auth/register
-Registra un usuario a partir de una invitación.
+Registra un usuario utilizando un token de registro.
 
 **Body**
 - `name` (string, requerido)
 - `email` (string, requerido)
 - `password` (string, min 8, requerido)
 - `password_confirmation` (string, debe coincidir)
-- `invitation_token` (string, requerido)
+- `registration_token` (string, requerido)
+- `invitation_token` (string, opcional)
 - `profile_picture_url` (url, opcional)
 - `phone_number` (string, opcional)
 

@@ -32,7 +32,8 @@ class InvitationExpensePaymentFlowTest extends TestCase
             'invitee_email' => $inviteEmail,
             'group_id' => $group->id,
         ])->assertStatus(201);
-        $token = $inv->json('invitation.token');
+        $token    = $inv->json('invitation.token');
+        $regToken = $inv->json('registration_token.token');
 
         // Register invited user
         $this->postJson('/api/auth/register', [
@@ -40,6 +41,7 @@ class InvitationExpensePaymentFlowTest extends TestCase
             'email' => $inviteEmail,
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
+            'registration_token' => $regToken,
             'invitation_token' => $token,
         ])->assertStatus(201);
         $member = User::where('email', $inviteEmail)->first();
