@@ -134,14 +134,16 @@ ejecutar:
 php artisan migrate --seed --class=DevSeeder
 ```
 
-La consola mostrará un token de invitación, por ejemplo:
+La consola mostrará un token de registro y uno de invitación, por ejemplo:
 
 ```
+Token de registro para newuser@example.com:
+REGTOKEN123...
 Token de invitación para newuser@example.com:
-4f3b59d2c4e148d9a5b2bdf5b6c177a3e0b8b50d71675dc1a1e4b42e2c596ef8
+INVTOKEN456...
 ```
 
-Con este token se puede registrar un usuario con el endpoint:
+Con estos tokens se puede registrar un usuario con el endpoint:
 
 ```http
 POST /api/auth/register
@@ -150,7 +152,8 @@ POST /api/auth/register
   "email": "newuser@example.com",
   "password": "secret1234",
   "password_confirmation": "secret1234",
-  "invitation_token": "4f3b59d2c4e148d9a5b2bdf5b6c177a3e0b8b50d71675dc1a1e4b42e2c596ef8"
+  "registration_token": "REGTOKEN123...",
+  "invitation_token": "INVTOKEN456..."
 }
 ```
 

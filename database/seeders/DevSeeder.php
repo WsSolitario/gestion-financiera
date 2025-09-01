@@ -45,11 +45,22 @@ class DevSeeder extends Seeder
             'inviter_id'    => $ownerId,
             'invitee_email' => 'newuser@example.com',
             'group_id'      => $groupId,
-            'token'         => $token = Str::random(64),
+            'token'         => $invToken = Str::random(64),
             'status'        => 'pending',
             'expires_at'    => now()->addDays(7),
         ]);
 
-        echo "\nToken de invitación para newuser@example.com:\n$token\n\n";
+        DB::table('registration_tokens')->insert([
+            'id'         => (string) Str::uuid(),
+            'email'      => 'newuser@example.com',
+            'token'      => $regToken = Str::random(64),
+            'status'     => 'pending',
+            'expires_at' => now()->addDays(7),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        echo "\nToken de registro para newuser@example.com:\n$regToken\n";
+        echo "Token de invitación para newuser@example.com:\n$invToken\n\n";
     }
 }

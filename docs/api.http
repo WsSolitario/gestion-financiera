@@ -10,6 +10,7 @@ Content-Type: application/json
   "email": "juan@example.com",
   "password": "secret123",
   "password_confirmation": "secret123",
+  "registration_token": "REG123",
   "invitation_token": "ABC123"
 }
 

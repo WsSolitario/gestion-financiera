@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\User;
 use App\Models\Invitation;
+use App\Models\RegistrationToken;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,7 +19,8 @@ class AuthController extends Controller
 {
     /**
      * POST /api/auth/register
-     * Requiere: name, email, password, password_confirmation, invitation_token
+     * Requiere: name, email, password, password_confirmation, registration_token
+     * Opcional: invitation_token para unirse a un grupo
      */
     public function register(Request $request): JsonResponse
     {
@@ -26,49 +28,82 @@ class AuthController extends Controller
             'name'                => ['required', 'string', 'max:100'],
             'email'               => ['required', 'email', 'max:255', 'unique:users,email'],
             'password'            => ['required', 'string', 'min:8', 'confirmed'],
-            'invitation_token'    => ['required', 'string'],
+            'registration_token'  => ['required', 'string'],
+            'invitation_token'    => ['sometimes', 'nullable', 'string'],
             'profile_picture_url' => ['sometimes', 'nullable', 'url'],
             'phone_number'        => ['sometimes', 'nullable', 'string', 'max:50'],
         ]);
 
+        /** @var RegistrationToken|null $regToken */
+        $regToken = RegistrationToken::where('token', $data['registration_token'])->first();
+
+        if (! $regToken) {
+            throw ValidationException::withMessages([
+                'registration_token' => ['Token de registro no encontrado.'],
+            ]);
+        }
+
+        if ($regToken->status !== 'pending') {
+            throw ValidationException::withMessages([
+                'registration_token' => ['El token de registro no está disponible (estado: '.$regToken->status.').'],
+            ]);
+        }
+
+        $isExpiredReg = !empty($regToken->expires_at)
+            && Carbon::parse($regToken->expires_at)->isPast();
+
+        if ($isExpiredReg) {
+            $regToken->update(['status' => 'expired']);
+            throw ValidationException::withMessages([
+                'registration_token' => ['El token de registro ha expirado.'],
+            ]);
+        }
+
+        if (strcasecmp($regToken->email, $data['email']) !== 0) {
+            throw ValidationException::withMessages([
+                'email' => ['El email no coincide con el del token de registro.'],
+            ]);
+        }
+
         /** @var Invitation|null $invitation */
-        $invitation = Invitation::where('token', $data['invitation_token'])->first();
+        $invitation = null;
+        if (!empty($data['invitation_token'])) {
+            $invitation = Invitation::where('token', $data['invitation_token'])->first();
 
-        if (! $invitation) {
-            throw ValidationException::withMessages([
-                'invitation_token' => ['Token de invitación no encontrado.'],
-            ]);
-        }
+            if (! $invitation) {
+                throw ValidationException::withMessages([
+                    'invitation_token' => ['Token de invitación no encontrado.'],
+                ]);
+            }
 
-        if ($invitation->status !== 'pending') {
-            throw ValidationException::withMessages([
-                'invitation_token' => ['La invitación no está disponible (estado: '.$invitation->status.').'],
-            ]);
-        }
+            if ($invitation->status !== 'pending') {
+                throw ValidationException::withMessages([
+                    'invitation_token' => ['La invitación no está disponible (estado: '.$invitation->status.').'],
+                ]);
+            }
 
-        // Expira solo si existe expires_at y ya pasó
-        $isExpired = !empty($invitation->expires_at)
-            && Carbon::parse($invitation->expires_at)->isPast();
+            $isExpired = !empty($invitation->expires_at)
+                && Carbon::parse($invitation->expires_at)->isPast();
 
-        if ($isExpired) {
-            $invitation->update(['status' => 'expired']);
-            throw ValidationException::withMessages([
-                'invitation_token' => ['La invitación ha expirado.'],
-            ]);
-        }
+            if ($isExpired) {
+                $invitation->update(['status' => 'expired']);
+                throw ValidationException::withMessages([
+                    'invitation_token' => ['La invitación ha expirado.'],
+                ]);
+            }
 
-        // Si invitee_email está seteado, debe coincidir con el email de registro
-        if (!empty($invitation->invitee_email)
-            && strcasecmp($invitation->invitee_email, $data['email']) !== 0) {
-            throw ValidationException::withMessages([
-                'email' => ['El email no coincide con el de la invitación.'],
-            ]);
+            if (!empty($invitation->invitee_email)
+                && strcasecmp($invitation->invitee_email, $data['email']) !== 0) {
+                throw ValidationException::withMessages([
+                    'email' => ['El email no coincide con el de la invitación.'],
+                ]);
+            }
         }
 
         $now = now();
 
         /** @var \App\Models\User $user */
-        $user = DB::transaction(function () use ($data, $invitation, $now) {
+        $user = DB::transaction(function () use ($data, $invitation, $regToken, $now) {
             // Generar UUID explícito para evitar user_id NULL en pivots
             $user                 = new User();
             $user->id             = (string) Str::uuid();
@@ -87,26 +122,28 @@ class AuthController extends Controller
 
             $user->save();
 
-            // Insertar relación en group_members
-            $already = DB::table('group_members')
-                ->where('group_id', $invitation->group_id)
-                ->where('user_id', $user->id)
-                ->exists();
+            if ($invitation) {
+                $already = DB::table('group_members')
+                    ->where('group_id', $invitation->group_id)
+                    ->where('user_id', $user->id)
+                    ->exists();
 
-            if (! $already) {
-                DB::table('group_members')->insert([
-                    'id'        => (string) Str::uuid(),
-                    'group_id'  => $invitation->group_id,
-                    'user_id'   => $user->id,
-                    'role'      => 'member',
-                    'joined_at' => $now,
+                if (! $already) {
+                    DB::table('group_members')->insert([
+                        'id'        => (string) Str::uuid(),
+                        'group_id'  => $invitation->group_id,
+                        'user_id'   => $user->id,
+                        'role'      => 'member',
+                        'joined_at' => $now,
+                    ]);
+                }
+
+                $invitation->update([
+                    'status' => 'accepted',
                 ]);
             }
 
-            // Marcar invitación como aceptada (solo campos existentes)
-            $invitation->update([
-                'status' => 'accepted',
-            ]);
+            $regToken->update(['status' => 'used']);
 
             return $user;
         });

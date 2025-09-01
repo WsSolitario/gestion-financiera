@@ -34,13 +34,15 @@ class AuthControllerTest extends TestCase
             'group_id' => $group->id,
         ])->assertStatus(201);
 
-        $token = $invResponse->json('invitation.token');
+        $token     = $invResponse->json('invitation.token');
+        $regToken  = $invResponse->json('registration_token.token');
 
         $registerResponse = $this->postJson('/api/auth/register', [
             'name' => 'Invited User',
             'email' => $inviteEmail,
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
+            'registration_token' => $regToken,
             'invitation_token' => $token,
         ]);
 

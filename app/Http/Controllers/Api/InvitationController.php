@@ -124,10 +124,35 @@ class InvitationController extends Controller
 
         $row = DB::table('invitations')->where('id', $id)->first();
 
+        $registration = null;
+        $userExists = DB::table('users')
+            ->whereRaw('LOWER(email) = ?', [mb_strtolower($data['invitee_email'])])
+            ->exists();
+
+        if (!$userExists) {
+            $regToken = Str::random(64);
+            $regId    = (string) Str::uuid();
+
+            DB::table('registration_tokens')->insert([
+                'id'         => $regId,
+                'email'      => $data['invitee_email'],
+                'token'      => $regToken,
+                'status'     => 'pending',
+                'expires_at' => $expires,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $registration = [
+                'token'      => $regToken,
+                'expires_at' => $expires,
+            ];
+        }
+
         return response()->json([
-            'message'    => 'Invitación creada',
-            // ¡Solo aquí enviamos el token!
-            'invitation' => $this->formatInvitation($row, true),
+            'message'           => 'Invitación creada',
+            'invitation'        => $this->formatInvitation($row, true),
+            'registration_token'=> $registration,
         ], 201);
     }
 

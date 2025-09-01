@@ -24,7 +24,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name, email, password, password_confirmation, invitation_token]
+              required: [name, email, password, password_confirmation, registration_token]
               properties:
                 name:
                   type: string
@@ -37,6 +37,8 @@ paths:
                 password_confirmation:
                   type: string
                   format: password
+                registration_token:
+                  type: string
                 invitation_token:
                   type: string
                 profile_picture_url:
@@ -49,6 +51,7 @@ paths:
               email: juan@example.com
               password: secret123
               password_confirmation: secret123
+              registration_token: REG123
               invitation_token: ABC123
       responses:
         '201':
