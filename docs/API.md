@@ -220,12 +220,18 @@ Crea un pago entre dos miembros de un grupo.
 - `amount` (number, requerido)
 - `note` (string, opcional)
 - `evidence_url` (url, opcional)
+- `payment_method` (`cash`|`transfer`, opcional)
 
 ### GET /api/payments/{id}
 Muestra detalles de un pago.
 
 ### PUT /api/payments/{id}
 Actualiza un pago pendiente.
+
+**Body** (al menos un campo)
+- `payment_method` (`cash`|`transfer`, opcional)
+- `proof_url` (url, opcional)
+- `signature` (string, opcional)
 
 ### POST /api/payments/{id}/approve
 El receptor aprueba el pago y aplica el monto a deudas.
