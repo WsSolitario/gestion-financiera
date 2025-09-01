@@ -2,6 +2,59 @@
 
 Todas las rutas están bajo el prefijo `/api`. A menos que se indique lo contrario, los endpoints requieren autenticación con un token de Laravel Sanctum enviado en el encabezado `Authorization: Bearer {token}`.
 
+## Flujo de registro e invitaciones
+
+1. **Generar una invitación**
+
+   Crea una invitación para un correo y un grupo con `POST /api/invitations`.
+
+   ```http
+   POST /api/invitations
+   {
+     "invitee_email": "nuevo@correo.com",
+     "group_id": "UUID"
+   }
+   ```
+
+   El endpoint devuelve un token de invitación (`token`) que se enviará al invitado.
+
+2. **Registrar un usuario con el token**
+
+   El invitado usa el token recibido para registrarse vía `POST /api/auth/register`.
+
+   ```http
+   POST /api/auth/register
+   {
+     "name": "Nuevo Usuario",
+     "email": "nuevo@correo.com",
+     "password": "secreto",
+     "password_confirmation": "secreto",
+     "invitation_token": "TOKEN"
+   }
+   ```
+
+   Si el usuario ya existe, omite este paso y continúa con el siguiente.
+
+3. **Aceptar invitación de usuario existente**
+
+   Un usuario ya registrado puede unirse al grupo usando `POST /api/invitations/accept`.
+
+   ```http
+   POST /api/invitations/accept
+   {
+     "token": "TOKEN"
+   }
+   ```
+
+4. **Tokens enviados cuando no está registrado**
+
+   Si el correo no está asociado a un usuario, la invitación genera **dos** tokens:
+
+   - `registration_token`: para crear la cuenta mediante `POST /api/auth/register`.
+   - `group_token`: para unirse al grupo después del registro mediante `POST /api/invitations/accept`.
+
+   El cliente debe manejar ambos tokens en el flujo de alta de usuario.
+
 ## Autenticación
 
 ### POST /api/auth/register
