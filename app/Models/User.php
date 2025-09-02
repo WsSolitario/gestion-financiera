@@ -36,6 +36,11 @@ class User extends Authenticatable
         'is_active' => 'boolean',
     ];
 
+    public function setEmailAttribute($value)
+    {
+        $this->attributes['email'] = mb_strtolower($value);
+    }
+
     public function groups()
     {
         // Si la pivot NO tiene created_at/updated_at, no uses withTimestamps()
