@@ -21,7 +21,6 @@ class Payment extends Model
         'unapplied_amount',
         'note',
         'payment_method',
-        'proof_url',
         'evidence_url',
         'signature',
         'status',

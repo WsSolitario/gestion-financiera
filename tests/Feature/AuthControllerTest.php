@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\Group;
 use App\Models\User;
+use App\Models\RegistrationToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -103,5 +105,7 @@ class AuthControllerTest extends TestCase
             ->assertJson([
                 'message' => 'Cuenta desactivada',
             ]);
+    }
+
     }
 }

@@ -173,7 +173,7 @@ class PaymentController extends Controller
 
         $data = $request->validate([
             'payment_method' => ['sometimes', 'nullable', 'string', Rule::in(['cash', 'transfer'])],
-            'proof_url'      => ['sometimes', 'nullable', 'url'],
+            'evidence_url'   => ['sometimes', 'nullable', 'url'],
             'signature'      => ['sometimes', 'nullable', 'string'],
         ]);
 

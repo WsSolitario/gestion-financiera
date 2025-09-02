@@ -73,6 +73,7 @@ Registra un usuario utilizando un token de registro.
 
 ### POST /api/auth/login
 Inicia sesión y devuelve un token Sanctum. Usuarios desactivados no pueden iniciar sesión.
+Limitado a **5 intentos por minuto** por combinación de IP y correo.
 
 **Body**
 - `email` (string, requerido)
@@ -243,7 +244,7 @@ Actualiza un pago pendiente.
 
 **Body** (al menos un campo)
 - `payment_method` (`cash`|`transfer`, opcional)
-- `proof_url` (url, opcional)
+- `evidence_url` (url, opcional)
 - `signature` (string, opcional)
 
 ### POST /api/payments/{id}/approve

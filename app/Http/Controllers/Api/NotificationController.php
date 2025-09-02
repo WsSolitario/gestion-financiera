@@ -8,6 +8,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use Illuminate\Database\QueryException;
 
 class NotificationController extends Controller
 {
@@ -72,13 +73,52 @@ class NotificationController extends Controller
 
         // Insertar nuevo registro
         $id = (string) Str::uuid();
-        DB::table('user_devices')->insert([
-            'id'           => $id,
-            'user_id'      => $user->id,
-            'device_token' => $token,
-            'device_type'  => $type,
-            'created_at'   => now(),
-        ]);
+        try {
+            DB::table('user_devices')->insert([
+                'id'           => $id,
+                'user_id'      => $user->id,
+                'device_token' => $token,
+                'device_type'  => $type,
+                'created_at'   => now(),
+            ]);
+        } catch (QueryException $e) {
+            if ($e->getCode() !== '23505') {
+                throw $e;
+            }
+
+            // Otro proceso insertó el mismo token antes; intentamos actualizar
+            $existing = DB::table('user_devices')->where('device_token', $token)->first();
+
+            $needsUpdate =
+                ($existing->user_id !== $user->id) ||
+                ($existing->device_type !== $type);
+
+            if ($needsUpdate) {
+                DB::table('user_devices')
+                    ->where('id', $existing->id)
+                    ->update([
+                        'user_id'     => $user->id,
+                        'device_type' => $type,
+                    ]);
+            }
+
+            $total = DB::table('user_devices')->where('user_id', $user->id)->count();
+
+            return response()->json([
+                'message' => $needsUpdate
+                    ? 'Dispositivo actualizado'
+                    : 'Dispositivo ya estaba registrado',
+                'device'  => [
+                    'id'           => $existing->id,
+                    'user_id'      => $user->id,
+                    'device_token' => $token,
+                    'device_type'  => $type,
+                ],
+                'stats' => [
+                    'total_devices_for_user' => $total,
+                ],
+            ], 200);
+        }
 
         $total = DB::table('user_devices')->where('user_id', $user->id)->count();
 
