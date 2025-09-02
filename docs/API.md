@@ -243,7 +243,7 @@ Actualiza un pago pendiente.
 
 **Body** (al menos un campo)
 - `payment_method` (`cash`|`transfer`, opcional)
-- `proof_url` (url, opcional)
+- `evidence_url` (url, opcional)
 - `signature` (string, opcional)
 
 ### POST /api/payments/{id}/approve

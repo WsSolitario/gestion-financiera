@@ -70,4 +70,47 @@ class PaymentControllerTest extends TestCase
             return $job->userId === $payer->id && $job->title === 'Pago aprobado';
         });
     }
+
+    public function test_update_accepts_evidence_url(): void
+    {
+        $payer = User::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Payer',
+            'email' => 'payer@example.com',
+        ]);
+
+        $receiver = User::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Receiver',
+            'email' => 'receiver@example.com',
+        ]);
+
+        $paymentId = (string) Str::uuid();
+
+        DB::table('payments')->insert([
+            'id' => $paymentId,
+            'from_user_id' => $payer->id,
+            'to_user_id' => $receiver->id,
+            'amount' => 50,
+            'status' => 'pending',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($payer, 'sanctum');
+
+        $url = 'https://example.com/comprobante.jpg';
+
+        $response = $this->putJson("/api/payments/{$paymentId}", [
+            'evidence_url' => $url,
+        ]);
+
+        $response->assertStatus(200)
+                 ->assertJsonPath('payment.evidence_url', $url);
+
+        $this->assertDatabaseHas('payments', [
+            'id' => $paymentId,
+            'evidence_url' => $url,
+        ]);
+    }
 }

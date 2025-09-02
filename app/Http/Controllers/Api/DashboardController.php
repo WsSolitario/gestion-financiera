@@ -217,7 +217,7 @@ class DashboardController extends Controller
                     'status'       => $p->status,
                     'payment_date' => $p->payment_date,
                     'method'       => $p->payment_method,
-                    'proof_url'    => $p->proof_url,
+                    'evidence_url' => $p->evidence_url,
                     'direction'    => $direction,
                     'counterparty' => $counterparty,
                 ];
