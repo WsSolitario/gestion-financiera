@@ -50,13 +50,16 @@ return new class extends Migration
             CREATE TABLE IF NOT EXISTS public.users (
                 id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
                 name varchar(100) NOT NULL,
-                email varchar(255) NOT NULL UNIQUE,
+                email varchar(255) NOT NULL,
                 password_hash text NOT NULL,
                 profile_picture_url text,
                 phone_number varchar(50),
                 created_at timestamptz DEFAULT CURRENT_TIMESTAMP,
                 updated_at timestamptz DEFAULT CURRENT_TIMESTAMP
             );
+
+            CREATE UNIQUE INDEX IF NOT EXISTS users_email_lower_unique
+                ON public.users (LOWER(email));
 
             CREATE TABLE IF NOT EXISTS public.groups (
                 id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -259,6 +262,7 @@ return new class extends Migration
 
         // Borra tablas (en orden por FKs)
         DB::unprepared("
+            DROP INDEX IF EXISTS public.users_email_lower_unique;
             DROP TABLE IF EXISTS public.expense_participants CASCADE;
             DROP TABLE IF EXISTS public.invitations CASCADE;
             DROP TABLE IF EXISTS public.expenses CASCADE;
