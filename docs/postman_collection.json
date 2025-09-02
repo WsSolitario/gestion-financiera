@@ -1,37 +1,15 @@
 {
   "info": {
     "name": "Gestion Financiera API",
-    "description": "Colecci\u00f3n para probar la API con tres usuarios y m\u00faltiples escenarios",
+    "description": "Colección básica para probar los principales flujos",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Public",
-      "item": [
-        {
-          "name": "Verify Invitation Token",
-          "request": {
-            "method": "GET",
-            "url": {
-              "raw": "{{base_url}}/invitations/token/{{invitation_token1}}",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "invitations",
-                "token",
-                "{{invitation_token1}}"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
       "name": "Auth",
       "item": [
         {
-          "name": "Register User 1",
+          "name": "Login",
           "request": {
             "method": "POST",
             "header": [
@@ -42,85 +20,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"{{user1_name}}\",\n  \"email\": \"{{user1_email}}\",\n  \"password\": \"{{user1_password}}\",\n  \"password_confirmation\": \"{{user1_password}}\",\n  \"registration_token\": \"{{registration_token1}}\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/register",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "register"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Register User 2",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"{{user2_name}}\",\n  \"email\": \"{{user2_email}}\",\n  \"password\": \"{{user2_password}}\",\n  \"password_confirmation\": \"{{user2_password}}\",\n  \"registration_token\": \"{{registration_token2}}\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/register",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "register"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Register User 3",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"{{user3_name}}\",\n  \"email\": \"{{user3_email}}\",\n  \"password\": \"{{user3_password}}\",\n  \"password_confirmation\": \"{{user3_password}}\",\n  \"registration_token\": \"{{registration_token3}}\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/register",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "register"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Login User 1",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{user1_email}}\",\n  \"password\": \"{{user1_password}}\"\n}"
+              "raw": "{\n  \"email\": \"juan@example.com\",\n  \"password\": \"secret123\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/login",
@@ -132,191 +32,38 @@
                 "login"
               ]
             }
-          }
-        },
-        {
-          "name": "Login User 2",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{user2_email}}\",\n  \"password\": \"{{user2_password}}\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/login",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Login User 3",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{user3_email}}\",\n  \"password\": \"{{user3_password}}\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/login",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Logout",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/auth/logout",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "logout"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Users",
-      "item": [
-        {
-          "name": "Get Profile",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/users/me",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "users",
-                "me"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Update Profile",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
+          },
+          "response": [
+            {
+              "name": "200",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"juan@example.com\",\n  \"password\": \"secret123\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "auth",
+                    "login"
+                  ]
+                }
               },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"{{user1_name}} Updated\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/users/me",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "users",
-                "me"
-              ]
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"Login correcto\",\n  \"token\": \"TOKEN\"\n}"
             }
-          }
-        },
-        {
-          "name": "Change Password",
-          "request": {
-            "method": "PUT",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"current_password\": \"{{user1_password}}\",\n  \"new_password\": \"new{{user1_password}}\",\n  \"new_password_confirmation\": \"new{{user1_password}}\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/users/me/password",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "users",
-                "me",
-                "password"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Delete Account",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user3_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/users/me",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "users",
-                "me"
-              ]
-            }
-          }
+          ]
         }
       ]
     },
@@ -330,7 +77,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
+                "value": "Bearer {{token}}"
               },
               {
                 "key": "Content-Type",
@@ -339,7 +86,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Viaje Amigos\",\n  \"description\": \"Gastos del viaje\"\n}"
+              "raw": "{\n  \"name\": \"Viaje\",\n  \"description\": \"Gastos del viaje\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/groups",
@@ -350,59 +97,41 @@
                 "groups"
               ]
             }
-          }
-        },
-        {
-          "name": "Add Member",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
+          },
+          "response": [
+            {
+              "name": "201",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Viaje\",\n  \"description\": \"Gastos del viaje\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/groups",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "groups"
+                  ]
+                }
               },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"user_id\": \"{{user2_id}}\",\n  \"role\": \"member\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/groups/{{group_id}}/members",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "groups",
-                "{{group_id}}",
-                "members"
-              ]
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": \"UUID\",\n  \"name\": \"Viaje\",\n  \"description\": \"Gastos del viaje\"\n}"
             }
-          }
-        },
-        {
-          "name": "List Groups",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/groups",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "groups"
-              ]
-            }
-          }
+          ]
         }
       ]
     },
@@ -410,13 +139,13 @@
       "name": "Invitations",
       "item": [
         {
-          "name": "Invite User2",
+          "name": "Create Invitation",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
+                "value": "Bearer {{token}}"
               },
               {
                 "key": "Content-Type",
@@ -425,7 +154,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"invitee_email\": \"{{user2_email}}\",\n  \"group_id\": \"{{group_id}}\"\n}"
+              "raw": "{\n  \"invitee_email\": \"amigo@example.com\",\n  \"group_id\": \"UUID\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/invitations",
@@ -436,36 +165,41 @@
                 "invitations"
               ]
             }
-          }
-        },
-        {
-          "name": "Invite User3",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
+          },
+          "response": [
+            {
+              "name": "201",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"invitee_email\": \"amigo@example.com\",\n  \"group_id\": \"UUID\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/invitations",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "invitations"
+                  ]
+                }
               },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"invitee_email\": \"{{user3_email}}\",\n  \"group_id\": \"{{group_id}}\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/invitations",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "invitations"
-              ]
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"token\": \"INVITE-TOKEN\"\n}"
             }
-          }
+          ]
         },
         {
           "name": "Accept Invitation",
@@ -479,7 +213,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"token\": \"{{invitation_token1}}\"\n}"
+              "raw": "{\n  \"token\": \"INVITE-TOKEN\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/invitations/accept",
@@ -491,36 +225,38 @@
                 "accept"
               ]
             }
-          }
-        },
-        {
-          "name": "Invite External",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
+          },
+          "response": [
+            {
+              "name": "200",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"token\": \"INVITE-TOKEN\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/invitations/accept",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "invitations",
+                    "accept"
+                  ]
+                }
               },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"invitee_email\": \"friend@example.com\",\n  \"group_id\": \"{{group_id}}\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/invitations",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "invitations"
-              ]
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"Invitación aceptada\"\n}"
             }
-          }
+          ]
         }
       ]
     },
@@ -528,13 +264,13 @@
       "name": "Expenses",
       "item": [
         {
-          "name": "Individual Expense",
+          "name": "Create Expense",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
+                "value": "Bearer {{token}}"
               },
               {
                 "key": "Content-Type",
@@ -543,7 +279,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"description\": \"Taxi aeropuerto\",\n  \"total_amount\": 30,\n  \"group_id\": \"{{group_id}}\",\n  \"expense_date\": \"2024-01-01\",\n  \"has_ticket\": false,\n  \"participants\": [{\n    \"user_id\": \"{{user1_id}}\",\n    \"amount_due\": 30\n  }]\n}"
+              "raw": "{\n  \"description\": \"Cena\",\n  \"total_amount\": 100,\n  \"group_id\": \"UUID\",\n  \"expense_date\": \"2024-01-01\",\n  \"has_ticket\": false,\n  \"participants\": [{\n    \"user_id\": \"UUID\",\n    \"amount_due\": 100\n  }]\n}"
             },
             "url": {
               "raw": "{{base_url}}/expenses",
@@ -554,59 +290,41 @@
                 "expenses"
               ]
             }
-          }
-        },
-        {
-          "name": "Collaborative Expense",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
+          },
+          "response": [
+            {
+              "name": "201",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"description\": \"Cena\",\n  \"total_amount\": 100,\n  \"group_id\": \"UUID\",\n  \"expense_date\": \"2024-01-01\",\n  \"has_ticket\": false,\n  \"participants\": [{\n    \"user_id\": \"UUID\",\n    \"amount_due\": 100\n  }]\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/expenses",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "expenses"
+                  ]
+                }
               },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"description\": \"Cena en grupo\",\n  \"total_amount\": 90,\n  \"group_id\": \"{{group_id}}\",\n  \"expense_date\": \"2024-01-02\",\n  \"has_ticket\": false,\n  \"participants\": [{\n    \"user_id\": \"{{user1_id}}\",\n    \"amount_due\": 30\n  },{\n    \"user_id\": \"{{user2_id}}\",\n    \"amount_due\": 30\n  },{\n    \"user_id\": \"{{user3_id}}\",\n    \"amount_due\": 30\n  }]\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/expenses",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "expenses"
-              ]
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": \"UUID\",\n  \"status\": \"pending\"\n}"
             }
-          }
-        },
-        {
-          "name": "Approve Expense",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user2_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/expenses/{{expense_id}}/approve",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "expenses",
-                "{{expense_id}}",
-                "approve"
-              ]
-            }
-          }
+          ]
         }
       ]
     },
@@ -614,13 +332,13 @@
       "name": "Payments",
       "item": [
         {
-          "name": "Create Payment (cash)",
+          "name": "Create Payment",
           "request": {
             "method": "POST",
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{user2_token}}"
+                "value": "Bearer {{token}}"
               },
               {
                 "key": "Content-Type",
@@ -629,7 +347,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"group_id\": \"{{group_id}}\",\n  \"from_user_id\": \"{{user2_id}}\",\n  \"to_user_id\": \"{{user1_id}}\",\n  \"amount\": 30,\n  \"payment_method\": \"cash\"\n}"
+              "raw": "{\n  \"group_id\": \"UUID\",\n  \"from_user_id\": \"UUID\",\n  \"to_user_id\": \"UUID\",\n  \"amount\": 50,\n  \"note\": \"Pago de cena\",\n  \"evidence_url\": \"https://example.com/recibo.jpg\",\n  \"payment_method\": \"cash\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/payments",
@@ -640,116 +358,41 @@
                 "payments"
               ]
             }
-          }
-        },
-        {
-          "name": "Create Payment (transfer)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user3_token}}"
+          },
+          "response": [
+            {
+              "name": "201",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"group_id\": \"UUID\",\n  \"from_user_id\": \"UUID\",\n  \"to_user_id\": \"UUID\",\n  \"amount\": 50,\n  \"note\": \"Pago de cena\",\n  \"evidence_url\": \"https://example.com/recibo.jpg\",\n  \"payment_method\": \"cash\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/payments",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "payments"
+                  ]
+                }
               },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"group_id\": \"{{group_id}}\",\n  \"from_user_id\": \"{{user3_id}}\",\n  \"to_user_id\": \"{{user1_id}}\",\n  \"amount\": 30,\n  \"payment_method\": \"transfer\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/payments",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "payments"
-              ]
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"id\": \"UUID\",\n  \"status\": \"pending\"\n}"
             }
-          }
-        },
-        {
-          "name": "Approve Payment",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/payments/{{payment_id}}/approve",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "payments",
-                "{{payment_id}}",
-                "approve"
-              ]
-            }
-          }
-        },
-        {
-          "name": "Reject Payment",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/payments/{{payment_id}}/reject",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "payments",
-                "{{payment_id}}",
-                "reject"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Recurring Payments",
-      "item": [
-        {
-          "name": "Create Recurring Payment",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"title\": \"Spotify\",\n  \"description\": \"Suscripcion mensual\",\n  \"amount_monthly\": 10,\n  \"months\": 12,\n  \"start_date\": \"2024-01-05\",\n  \"day_of_month\": 5,\n  \"reminder_days_before\": 2,\n  \"shared_with\": [\n    \"{{user2_id}}\",\n    \"{{user3_id}}\"\n  ]\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/recurring-payments",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "recurring-payments"
-              ]
-            }
-          }
+          ]
         }
       ]
     },
@@ -763,7 +406,7 @@
             "header": [
               {
                 "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
+                "value": "Bearer {{token}}"
               },
               {
                 "key": "Content-Type",
@@ -772,7 +415,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"token\": \"device-token-example\"\n}"
+              "raw": "{\n  \"device_token\": \"device-token-example\",\n  \"device_type\": \"web\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/notifications/register-device",
@@ -784,62 +427,54 @@
                 "register-device"
               ]
             }
-          }
+          },
+          "response": [
+            {
+              "name": "200",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Authorization",
+                    "value": "Bearer {{token}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"device_token\": \"device-token-example\",\n  \"device_type\": \"web\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/notifications/register-device",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "notifications",
+                    "register-device"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"Dispositivo registrado\"\n}"
+            }
+          ]
         }
       ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost/api"
     },
     {
-      "name": "Dashboard",
-      "item": [
-        {
-          "name": "Summary",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/dashboard/summary",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "dashboard",
-                "summary"
-              ]
-            }
-          }
-        }
-      ]
-    },
-    {
-      "name": "Reports",
-      "item": [
-        {
-          "name": "List Reports",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Authorization",
-                "value": "Bearer {{user1_token}}"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/reports",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "reports"
-              ]
-            }
-          }
-        }
-      ]
+      "key": "token",
+      "value": ""
     }
   ]
 }
