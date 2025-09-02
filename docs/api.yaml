@@ -75,14 +75,29 @@ paths:
                 password:
                   type: string
                   format: password
-            example:
-              email: juan@example.com
-              password: secret123
+            examples:
+              login:
+                value:
+                  email: juan@example.com
+                  password: secret123
       responses:
         '200':
           description: Token generado
+          content:
+            application/json:
+              examples:
+                success:
+                  value:
+                    message: Login correcto
+                    token: TOKEN
         '401':
           description: Credenciales inválidas
+          content:
+            application/json:
+              examples:
+                error:
+                  value:
+                    message: Credenciales inválidas
         '403':
           description: Cuenta desactivada
         '429':
@@ -182,12 +197,22 @@ paths:
                   type: string
                 description:
                   type: string
-            example:
-              name: Viaje a Madrid
-              description: Gastos del viaje de mayo
+            examples:
+              create:
+                value:
+                  name: Viaje a Madrid
+                  description: Gastos del viaje de mayo
       responses:
         '201':
           description: Grupo creado
+          content:
+            application/json:
+              examples:
+                success:
+                  value:
+                    id: 11111111-2222-3333-4444-555555555555
+                    name: Viaje a Madrid
+                    description: Gastos del viaje de mayo
   /groups/{group}:
     parameters:
       - in: path
@@ -354,13 +379,21 @@ paths:
                   format: uuid
                 expires_in_days:
                   type: integer
-            example:
-              invitee_email: amigo@example.com
-              group_id: 11111111-2222-3333-4444-555555555555
-              expires_in_days: 7
+            examples:
+              create:
+                value:
+                  invitee_email: amigo@example.com
+                  group_id: 11111111-2222-3333-4444-555555555555
+                  expires_in_days: 7
       responses:
         '201':
           description: Invitación creada
+          content:
+            application/json:
+              examples:
+                success:
+                  value:
+                    token: INVITE-TOKEN
   /invitations/{id}:
     parameters:
       - in: path
@@ -392,11 +425,19 @@ paths:
               properties:
                 token:
                   type: string
-            example:
-              token: ABC123
+            examples:
+              accept:
+                value:
+                  token: ABC123
       responses:
         '200':
           description: Invitación aceptada
+          content:
+            application/json:
+              examples:
+                success:
+                  value:
+                    message: Invitación aceptada
   /invitations/token/{token}:
     parameters:
       - in: path
@@ -469,21 +510,30 @@ paths:
                         format: uuid
                       amount_due:
                         type: number
-            example:
-              description: Cena
-              total_amount: 100.5
-              group_id: 11111111-2222-3333-4444-555555555555
-              expense_date: 2023-05-01
-              has_ticket: true
-              ticket_image_url: https://example.com/ticket.jpg
-              participants:
-                - user_id: 22222222-3333-4444-5555-666666666666
-                  amount_due: 50.25
-                - user_id: 33333333-4444-5555-6666-777777777777
-                  amount_due: 50.25
+            examples:
+              create:
+                value:
+                  description: Cena
+                  total_amount: 100.5
+                  group_id: 11111111-2222-3333-4444-555555555555
+                  expense_date: 2023-05-01
+                  has_ticket: true
+                  ticket_image_url: https://example.com/ticket.jpg
+                  participants:
+                    - user_id: 22222222-3333-4444-5555-666666666666
+                      amount_due: 50.25
+                    - user_id: 33333333-4444-5555-6666-777777777777
+                      amount_due: 50.25
       responses:
         '201':
           description: Gasto registrado
+          content:
+            application/json:
+              examples:
+                success:
+                  value:
+                    id: 99999999-0000-1111-2222-333333333333
+                    status: pending
   /expenses/{id}:
     parameters:
       - in: path
@@ -619,15 +669,29 @@ paths:
                 evidence_url:
                   type: string
                   format: uri
-            example:
-              group_id: 11111111-2222-3333-4444-555555555555
-              from_user_id: 22222222-3333-4444-5555-666666666666
-              to_user_id: 33333333-4444-5555-6666-777777777777
-              amount: 25.5
-              note: Pago por comida
+                payment_method:
+                  type: string
+                  enum: [cash, transfer]
+            examples:
+              create:
+                value:
+                  group_id: 11111111-2222-3333-4444-555555555555
+                  from_user_id: 22222222-3333-4444-5555-666666666666
+                  to_user_id: 33333333-4444-5555-6666-777777777777
+                  amount: 25.5
+                  note: Pago por comida
+                  evidence_url: https://example.com/comprobante.jpg
+                  payment_method: cash
       responses:
         '201':
           description: Pago creado
+          content:
+            application/json:
+              examples:
+                success:
+                  value:
+                    id: 44444444-5555-6666-7777-888888888888
+                    status: pending
   /payments/{id}:
     parameters:
       - in: path
@@ -655,14 +719,21 @@ paths:
                 evidence_url:
                   type: string
                   format: uri
-                signature:
-                  type: string
-            example:
-              payment_method: cash
-              evidence_url: https://example.com/comprobante.jpg
+            examples:
+              update:
+                value:
+                  payment_method: cash
+                  evidence_url: https://example.com/comprobante.jpg
       responses:
         '200':
           description: Pago actualizado
+          content:
+            application/json:
+              examples:
+                success:
+                  value:
+                    id: 44444444-5555-6666-7777-888888888888
+                    status: pending
   /payments/{id}/approve:
     parameters:
       - in: path
@@ -703,12 +774,20 @@ paths:
                 device_type:
                   type: string
                   enum: [android, ios, web]
-            example:
-              device_token: TOKEN123
-              device_type: android
+            examples:
+              register:
+                value:
+                  device_token: TOKEN123
+                  device_type: android
       responses:
         '200':
           description: Dispositivo registrado
+          content:
+            application/json:
+              examples:
+                success:
+                  value:
+                    message: Dispositivo registrado
   /dashboard/summary:
     get:
       summary: Resumen de deudas, pagos y actividad reciente

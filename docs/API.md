@@ -2,6 +2,137 @@
 
 Todas las rutas están bajo el prefijo `/api`. A menos que se indique lo contrario, los endpoints requieren autenticación con un token de Laravel Sanctum enviado en el encabezado `Authorization: Bearer {token}`.
 
+## Flujos completos
+
+### Autenticación - Login
+#### Solicitud
+```http
+POST /api/auth/login
+{
+  "email": "usuario@example.com",
+  "password": "secreto"
+}
+```
+#### Respuesta
+```json
+{
+  "message": "Login correcto",
+  "token": "TOKEN",
+  "user": {
+    "id": "UUID",
+    "name": "Usuario Ejemplo",
+    "email": "usuario@example.com"
+  }
+}
+```
+
+### Grupos - Crear grupo
+#### Solicitud
+```http
+POST /api/groups
+{
+  "name": "Viaje",
+  "description": "Gastos del viaje"
+}
+```
+#### Respuesta
+```json
+{
+  "id": "UUID",
+  "name": "Viaje",
+  "description": "Gastos del viaje"
+}
+```
+
+### Invitaciones - Crear invitación
+#### Solicitud
+```http
+POST /api/invitations
+{
+  "invitee_email": "amigo@example.com",
+  "group_id": "UUID"
+}
+```
+#### Respuesta
+```json
+{
+  "token": "INVITE-TOKEN"
+}
+```
+
+### Invitaciones - Aceptar invitación
+#### Solicitud
+```http
+POST /api/invitations/accept
+{
+  "token": "INVITE-TOKEN"
+}
+```
+#### Respuesta
+```json
+{
+  "message": "Unido al grupo"
+}
+```
+
+### Gastos - Registrar gasto
+#### Solicitud
+```http
+POST /api/expenses
+{
+  "description": "Cena",
+  "total_amount": 100,
+  "group_id": "UUID",
+  "expense_date": "2024-01-01",
+  "has_ticket": false,
+  "participants": [{"user_id": "UUID","amount_due": 100}]
+}
+```
+#### Respuesta
+```json
+{
+  "id": "UUID",
+  "status": "pending"
+}
+```
+
+### Pagos - Crear pago
+#### Solicitud
+```http
+POST /api/payments
+{
+  "group_id": "UUID",
+  "from_user_id": "UUID",
+  "to_user_id": "UUID",
+  "amount": 50,
+  "note": "Pago de cena",
+  "evidence_url": "https://example.com/recibo.jpg"
+}
+```
+#### Respuesta
+```json
+{
+  "id": "UUID",
+  "status": "pending"
+}
+```
+
+### Notificaciones - Registrar dispositivo
+#### Solicitud
+```http
+POST /api/notifications/register-device
+{
+  "device_token": "token-ejemplo",
+  "device_type": "web"
+}
+```
+#### Respuesta
+```json
+{
+  "message": "Dispositivo registrado"
+}
+```
+
 ## Flujo de registro e invitaciones
 
 1. **Generar una invitación**
@@ -245,7 +376,6 @@ Actualiza un pago pendiente.
 **Body** (al menos un campo)
 - `payment_method` (`cash`|`transfer`, opcional)
 - `evidence_url` (url, opcional)
-- `signature` (string, opcional)
 
 ### POST /api/payments/{id}/approve
 El receptor aprueba el pago y aplica el monto a deudas.
