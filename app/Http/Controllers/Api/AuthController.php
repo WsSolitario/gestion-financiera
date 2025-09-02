@@ -34,37 +34,6 @@ class AuthController extends Controller
             'phone_number'        => ['sometimes', 'nullable', 'string', 'max:50'],
         ]);
 
-        /** @var RegistrationToken|null $regToken */
-        $regToken = RegistrationToken::where('token', $data['registration_token'])->first();
-
-        if (! $regToken) {
-            throw ValidationException::withMessages([
-                'registration_token' => ['Token de registro no encontrado.'],
-            ]);
-        }
-
-        if ($regToken->status !== 'pending') {
-            throw ValidationException::withMessages([
-                'registration_token' => ['El token de registro no está disponible (estado: '.$regToken->status.').'],
-            ]);
-        }
-
-        $isExpiredReg = !empty($regToken->expires_at)
-            && Carbon::parse($regToken->expires_at)->isPast();
-
-        if ($isExpiredReg) {
-            $regToken->update(['status' => 'expired']);
-            throw ValidationException::withMessages([
-                'registration_token' => ['El token de registro ha expirado.'],
-            ]);
-        }
-
-        if (strcasecmp($regToken->email, $data['email']) !== 0) {
-            throw ValidationException::withMessages([
-                'email' => ['El email no coincide con el del token de registro.'],
-            ]);
-        }
-
         /** @var Invitation|null $invitation */
         $invitation = null;
         if (!empty($data['invitation_token'])) {
@@ -103,7 +72,42 @@ class AuthController extends Controller
         $now = now();
 
         /** @var \App\Models\User $user */
-        $user = DB::transaction(function () use ($data, $invitation, $regToken, $now) {
+        $user = DB::transaction(function () use ($data, $invitation, $now) {
+            /** @var RegistrationToken|null $regToken */
+            $regToken = RegistrationToken::where('token', $data['registration_token'])
+                ->lockForUpdate()
+                ->first();
+
+            if (! $regToken) {
+                throw ValidationException::withMessages([
+                    'registration_token' => ['Token de registro no encontrado.'],
+                ]);
+            }
+
+            if ($regToken->status !== 'pending') {
+                throw ValidationException::withMessages([
+                    'registration_token' => ['El token de registro no está disponible (estado: '.$regToken->status.').'],
+                ]);
+            }
+
+            $isExpiredReg = !empty($regToken->expires_at)
+                && Carbon::parse($regToken->expires_at)->isPast();
+
+            if ($isExpiredReg) {
+                RegistrationToken::where('id', $regToken->id)
+                    ->where('status', 'pending')
+                    ->update(['status' => 'expired']);
+                throw ValidationException::withMessages([
+                    'registration_token' => ['El token de registro ha expirado.'],
+                ]);
+            }
+
+            if (strcasecmp($regToken->email, $data['email']) !== 0) {
+                throw ValidationException::withMessages([
+                    'email' => ['El email no coincide con el del token de registro.'],
+                ]);
+            }
+
             // Generar UUID explícito para evitar user_id NULL en pivots
             $user                 = new User();
             $user->id             = (string) Str::uuid();
@@ -143,7 +147,9 @@ class AuthController extends Controller
                 ]);
             }
 
-            $regToken->update(['status' => 'used']);
+            RegistrationToken::where('id', $regToken->id)
+                ->where('status', 'pending')
+                ->update(['status' => 'used']);
 
             return $user;
         });
