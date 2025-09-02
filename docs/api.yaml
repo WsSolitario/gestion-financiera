@@ -59,6 +59,7 @@ paths:
   /auth/login:
     post:
       summary: Inicia sesión y devuelve un token Sanctum
+      description: Limitado a 5 intentos por minuto por IP y correo
       security: []
       requestBody:
         required: true
@@ -84,6 +85,8 @@ paths:
           description: Credenciales inválidas
         '403':
           description: Cuenta desactivada
+        '429':
+          description: Demasiados intentos. Máximo 5 por minuto.
   /auth/logout:
     post:
       summary: Cierra la sesión actual

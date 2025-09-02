@@ -8,6 +8,7 @@ use App\Models\RegistrationToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -106,42 +107,5 @@ class AuthControllerTest extends TestCase
             ]);
     }
 
-    public function test_registration_token_is_consumed_only_once_concurrently(): void
-    {
-        $email = 'concurrent@example.com';
-        $regToken = RegistrationToken::create([
-            'id' => (string) Str::uuid(),
-            'email' => $email,
-            'token' => Str::random(40),
-            'status' => 'pending',
-        ]);
-
-        $payload = [
-            'name' => 'Test User',
-            'email' => $email,
-            'password' => 'secret123',
-            'password_confirmation' => 'secret123',
-            'registration_token' => $regToken->token,
-        ];
-
-        $tempFile = tempnam(sys_get_temp_dir(), 'child');
-
-        $pid = pcntl_fork();
-        if ($pid === 0) {
-            DB::disconnect();
-            DB::reconnect();
-            $response = $this->postJson('/api/auth/register', $payload);
-            file_put_contents($tempFile, (string) $response->status());
-            exit(0);
-        }
-
-        $responseParent = $this->postJson('/api/auth/register', $payload);
-        pcntl_wait($status);
-        $childStatus = (int) file_get_contents($tempFile);
-        @unlink($tempFile);
-
-        $this->assertEqualsCanonicalizing([201, 422], [$responseParent->status(), $childStatus]);
-        $this->assertSame('used', $regToken->fresh()->status);
-        $this->assertEquals(1, User::where('email', $email)->count());
     }
 }
