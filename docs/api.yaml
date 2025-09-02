@@ -649,15 +649,17 @@ paths:
             schema:
               type: object
               properties:
-                amount:
-                  type: number
-                note:
+                payment_method:
                   type: string
+                  enum: [cash, transfer]
                 evidence_url:
                   type: string
                   format: uri
+                signature:
+                  type: string
             example:
-              note: Nota actualizada
+              payment_method: cash
+              evidence_url: https://example.com/comprobante.jpg
       responses:
         '200':
           description: Pago actualizado

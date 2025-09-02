@@ -93,7 +93,6 @@ return new class extends Migration
                 unapplied_amount numeric(10,2) DEFAULT 0,
                 payment_method varchar(100),
                 note text,
-                proof_url text,
                 evidence_url text,
                 signature text,
                 status public.payment_status NOT NULL DEFAULT 'pending',

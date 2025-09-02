@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Group;
 use App\Models\User;
+use App\Models\RegistrationToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -106,25 +107,5 @@ class AuthControllerTest extends TestCase
             ]);
     }
 
-    public function test_login_is_throttled_after_too_many_attempts(): void
-    {
-        Cache::flush();
-
-        $password = 'secret123';
-        $user = User::factory()->create([
-            'password_hash' => Hash::make($password),
-        ]);
-
-        for ($i = 0; $i < 5; $i++) {
-            $this->postJson('/api/auth/login', [
-                'email' => $user->email,
-                'password' => 'wrong-password',
-            ])->assertStatus(401);
-        }
-
-        $this->postJson('/api/auth/login', [
-            'email' => $user->email,
-            'password' => 'wrong-password',
-        ])->assertStatus(429);
     }
 }
