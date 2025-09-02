@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Tests\TestCase;
 
@@ -103,5 +104,27 @@ class AuthControllerTest extends TestCase
             ->assertJson([
                 'message' => 'Cuenta desactivada',
             ]);
+    }
+
+    public function test_login_is_throttled_after_too_many_attempts(): void
+    {
+        Cache::flush();
+
+        $password = 'secret123';
+        $user = User::factory()->create([
+            'password_hash' => Hash::make($password),
+        ]);
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->postJson('/api/auth/login', [
+                'email' => $user->email,
+                'password' => 'wrong-password',
+            ])->assertStatus(401);
+        }
+
+        $this->postJson('/api/auth/login', [
+            'email' => $user->email,
+            'password' => 'wrong-password',
+        ])->assertStatus(429);
     }
 }
