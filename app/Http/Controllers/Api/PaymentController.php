@@ -180,7 +180,10 @@ class PaymentController extends Controller
         if (empty($data)) return response()->json(['message' => 'Nada que actualizar'], 422);
 
         $data['updated_at'] = now();
-        DB::table('payments')->where('id', $paymentId)->update($data);
+        DB::table('payments')
+            ->where('id', $paymentId)
+            ->where('status', 'pending')
+            ->update($data);
 
         $updated = DB::table('payments as p')
             ->leftJoin('users as payer', 'payer.id', '=', 'p.from_user_id')
@@ -199,14 +202,24 @@ class PaymentController extends Controller
     {
         $userId = $request->user()->id;
 
-        $payment = DB::table('payments')->where('id', $paymentId)->first();
-        if (!$payment) return response()->json(['message' => 'Pago no encontrado'], 404);
-        if ($payment->to_user_id !== $userId) return response()->json(['message' => 'Solo el receptor puede aprobar este pago'], 403);
-        if ($payment->status !== 'pending') return response()->json(['message' => 'Solo puedes aprobar pagos pendientes'], 409);
-
         $applied = [];
 
-        DB::transaction(function () use ($payment, &$applied) {
+        $result = DB::transaction(function () use ($paymentId, $userId, &$applied) {
+            $payment = DB::table('payments')
+                ->where('id', $paymentId)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$payment) {
+                return ['error' => ['status' => 404, 'message' => 'Pago no encontrado']];
+            }
+            if ($payment->to_user_id !== $userId) {
+                return ['error' => ['status' => 403, 'message' => 'Solo el receptor puede aprobar este pago']];
+            }
+            if ($payment->status !== 'pending') {
+                return ['error' => ['status' => 409, 'message' => 'Solo puedes aprobar pagos pendientes']];
+            }
+
             $remaining = (int) round($payment->amount * 100);
 
             $pending = DB::table('expense_participants as ep')
@@ -253,12 +266,14 @@ class PaymentController extends Controller
                 $affectedExpenseIds[] = $row->expense_id;
             }
 
-            DB::table('payments')->where('id', $payment->id)->update([
-                'status' => 'approved',
-                'payment_date' => now(),
-                'unapplied_amount' => $remaining / 100,
-                'updated_at' => now(),
-            ]);
+            DB::table('payments')
+                ->where('id', $payment->id)
+                ->update([
+                    'status' => 'approved',
+                    'payment_date' => now(),
+                    'unapplied_amount' => $remaining / 100,
+                    'updated_at' => now(),
+                ]);
 
             foreach (array_unique($affectedExpenseIds) as $expenseId) {
                 $allPaid = !DB::table('expense_participants')
@@ -270,11 +285,21 @@ class PaymentController extends Controller
                     DB::table('expenses')->where('id', $expenseId)->update(['status' => 'completed']);
                 }
             }
+
+            return ['payment' => $payment];
         });
+
+        if (isset($result['error'])) {
+            $err = $result['error'];
+            return response()->json(['message' => $err['message']], $err['status']);
+        }
+
+        /** @var object $payment */
+        $payment = $result['payment'];
 
         $updated = DB::table('payments as p')
             ->leftJoin('users as payer', 'payer.id', '=', 'p.from_user_id')
-            ->leftJoin('users as recv',  'recv.id',  '=', 'p.to_user_id')
+            ->leftJoin('users as recv', 'recv.id', '=', 'p.to_user_id')
             ->where('p.id', $paymentId)
             ->select('p.*', 'payer.name as payer_name', 'recv.name as receiver_name')
             ->first();

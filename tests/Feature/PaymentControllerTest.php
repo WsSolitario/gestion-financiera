@@ -70,4 +70,39 @@ class PaymentControllerTest extends TestCase
             return $job->userId === $payer->id && $job->title === 'Pago aprobado';
         });
     }
+
+    public function test_concurrent_approval_requests(): void
+    {
+        $payer = User::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Payer',
+            'email' => 'payer@example.com',
+        ]);
+
+        $receiver = User::create([
+            'id' => (string) Str::uuid(),
+            'name' => 'Receiver',
+            'email' => 'receiver@example.com',
+        ]);
+
+        $paymentId = (string) Str::uuid();
+
+        DB::table('payments')->insert([
+            'id' => $paymentId,
+            'from_user_id' => $payer->id,
+            'to_user_id' => $receiver->id,
+            'amount' => 10,
+            'status' => 'pending',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($receiver, 'sanctum');
+
+        $first  = $this->postJson("/api/payments/{$paymentId}/approve");
+        $second = $this->postJson("/api/payments/{$paymentId}/approve");
+
+        $this->assertEquals(200, $first->status());
+        $this->assertEquals(409, $second->status());
+    }
 }
