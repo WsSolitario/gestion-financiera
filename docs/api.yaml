@@ -18,6 +18,20 @@ components:
 security:
   - sanctum: []
 paths:
+  /app-mode:
+    get:
+      summary: Obtiene el modo actual de la aplicación
+      description: Devuelve `public` o `private`
+      security: []
+      responses:
+        '200':
+          description: Modo actual
+          content:
+            application/json:
+              examples:
+                success:
+                  value:
+                    mode: public
   /auth/register:
     post:
       summary: Registra un usuario a partir de una invitación

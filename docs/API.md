@@ -9,6 +9,17 @@ La aplicación opera en dos modos controlados por la variable de entorno `MODE_A
 
 Para cambiar el modo edita el archivo `.env`, ajusta `MODE_APP` y ejecuta `php artisan config:clear`.
 
+### GET /api/app-mode
+Devuelve el modo actual de la aplicación (`public` o `private`).
+No requiere autenticación.
+
+#### Respuesta
+```json
+{
+  "mode": "public"
+}
+```
+
 ## Flujos completos
 
 ### Autenticación - Login
