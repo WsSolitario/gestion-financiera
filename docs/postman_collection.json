@@ -6,6 +6,48 @@
   },
   "item": [
     {
+      "name": "App",
+      "item": [
+        {
+          "name": "Get App Mode",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/app-mode",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "app-mode"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "200",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/app-mode",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "app-mode"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"mode\": \"public\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "name": "Auth",
       "item": [
         {

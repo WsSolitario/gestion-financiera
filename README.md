@@ -95,6 +95,20 @@ php artisan config:clear
 
 En modo `private` el endpoint `POST /api/auth/register` requiere un `registration_token`. En modo `public` este campo no es necesario y cualquiera puede registrarse.
 
+Para conocer el modo actual de la aplicación existe el endpoint público:
+
+```http
+GET /api/app-mode
+```
+
+Que devuelve un JSON con la forma:
+
+```json
+{
+  "mode": "public"
+}
+```
+
 ## Comandos básicos
 
 | Comando                     | Descripción                                      |
