@@ -12,6 +12,7 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\RecurringPaymentController;
+use App\Http\Controllers\Api\AppModeController;
 
 /**
  * RUTAS PÚBLICAS (sin auth)
@@ -22,6 +23,8 @@ use App\Http\Controllers\Api\RecurringPaymentController;
 
 Route::get('invitations/token/{token}', [InvitationController::class, 'verifyToken'])
     ->name('invitations.verify');
+
+Route::get('app-mode', [AppModeController::class, 'show']);
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
