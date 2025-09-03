@@ -14,14 +14,8 @@ class RecurringPaymentController extends Controller
     {
         $userId = $request->user()->id;
 
-        $items = DB::table('recurring_payments as rp')
-            ->leftJoin('recurring_payment_viewers as rpv', 'rpv.recurring_payment_id', '=', 'rp.id')
-            ->where(function ($q) use ($userId) {
-                $q->where('rp.user_id', $userId)
-                  ->orWhere('rpv.user_id', $userId);
-            })
-            ->select('rp.*')
-            ->distinct()
+        $items = DB::table('recurring_payments')
+            ->where('user_id', $userId)
             ->get();
 
         return response()->json($items, 200);
@@ -39,8 +33,6 @@ class RecurringPaymentController extends Controller
             'start_date'          => ['required', 'date'],
             'day_of_month'        => ['required', 'integer', 'between:1,31'],
             'reminder_days_before'=> ['required', 'integer', 'min:0'],
-            'shared_with'         => ['sometimes', 'array'],
-            'shared_with.*'       => ['uuid', 'exists:users,id'],
         ]);
 
         $id = (string) Str::uuid();
@@ -60,13 +52,6 @@ class RecurringPaymentController extends Controller
                 'updated_at'          => now(),
             ]);
 
-            if (!empty($data['shared_with'])) {
-                $rows = collect($data['shared_with'])->map(fn ($uid) => [
-                    'recurring_payment_id' => $id,
-                    'user_id'              => $uid,
-                ])->all();
-                DB::table('recurring_payment_viewers')->insert($rows);
-            }
         });
 
         $item = DB::table('recurring_payments')->where('id', $id)->first();
