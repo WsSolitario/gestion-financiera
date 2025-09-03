@@ -8,7 +8,7 @@ use App\Models\RegistrationToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -70,6 +70,29 @@ class AuthControllerTest extends TestCase
         ]);
     }
 
+    public function test_user_can_register_without_registration_token_in_public_mode(): void
+    {
+        Config::set('app.mode_app', 'public');
+
+        $response = $this->postJson('/api/auth/register', [
+            'name' => 'Public User',
+            'email' => 'public@example.com',
+            'password' => 'secret123',
+            'password_confirmation' => 'secret123',
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonStructure([
+                'message',
+                'token',
+                'user' => ['id', 'name', 'email'],
+            ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'public@example.com',
+        ]);
+    }
+
     public function test_user_can_login_with_valid_credentials(): void
     {
         $password = 'secret123';
@@ -107,7 +130,5 @@ class AuthControllerTest extends TestCase
             ->assertJson([
                 'message' => 'Cuenta desactivada',
             ]);
-    }
-
     }
 }
