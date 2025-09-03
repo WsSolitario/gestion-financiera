@@ -1,43 +1,46 @@
+# syntax=docker/dockerfile:1
 # Use PHP 8.2 FPM as base image
 FROM php:8.2-fpm
 
-# Install system dependencies
+ARG DEBIAN_FRONTEND=noninteractive
+ENV COMPOSER_ALLOW_SUPERUSER=1 \
+    APP_ENV=production
+
+# System deps
 RUN apt-get update && apt-get install -y \
     git \
     curl \
+    zip \
+    unzip \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
     libpq-dev \
-    zip \
-    unzip \
     nodejs \
-    npm
+    npm \
+ && rm -rf /var/lib/apt/lists/*
 
-# Clear cache
-RUN apt-get clean && rm -rf /var/lib/apt/lists/*
-
-# Install PHP extensions
+# PHP extensions
 RUN docker-php-ext-install pdo_pgsql pgsql mbstring exif pcntl bcmath gd
 
-# Get latest Composer
+# Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
+# Workdir
 WORKDIR /var/www
 
-# Copy existing application directory
+# Copia (en desarrollo será sobrescrita por el bind mount de docker-compose)
 COPY . /var/www
 
-# Install dependencies
-RUN composer install --no-interaction --no-dev --optimize-autoloader
-RUN npm install && npm run build
+# Instala dependencias PHP SIN scripts (evita correr Artisan en build)
+RUN composer install --no-interaction --no-dev --prefer-dist --optimize-autoloader --no-scripts || true
 
-# Set permissions
+# Build de front solo si hay package.json
+RUN [ -f package.json ] && npm install && npm run build || true
+
+# Permisos
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# Expose port 9000 for PHP-FPM
+# PHP-FPM
 EXPOSE 9000
-
-# Start PHP-FPM
 CMD ["php-fpm"]
