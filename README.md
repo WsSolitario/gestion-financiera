@@ -64,6 +64,7 @@ Variables principales:
 |-----------------|--------------------------------------------------|
 | `APP_NAME`      | Nombre mostrado de la aplicación.                |
 | `APP_URL`       | URL base del backend.                            |
+| `MODE_APP`      | Modo de la aplicación (`private` o `public`).    |
 | `APP_KEY`       | Clave generada con `php artisan key:generate`.   |
 | `DB_CONNECTION` | Motor de base de datos (usar `pgsql`).           |
 | `DB_HOST`       | Host del servidor PostgreSQL.                    |

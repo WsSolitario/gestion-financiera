@@ -43,6 +43,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Application Mode
+    |--------------------------------------------------------------------------
+    |
+    | This value determines the mode of your application, allowing you to
+    | switch between "private" and "public" modes depending on your needs.
+    |
+    */
+
+    'mode_app' => env('MODE_APP', 'private'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application URL
     |--------------------------------------------------------------------------
     |
