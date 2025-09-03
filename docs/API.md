@@ -404,7 +404,7 @@ El receptor rechaza el pago y libera deudas asociadas.
 ## Pagos recurrentes
 
 ### GET /api/recurring-payments
-Lista pagos recurrentes creados por el usuario o compartidos con él.
+Lista pagos recurrentes creados por el usuario.
 
 ### POST /api/recurring-payments
 Crea un nuevo pago recurrente para recordar deudas periódicas.
@@ -417,7 +417,6 @@ Crea un nuevo pago recurrente para recordar deudas periódicas.
 - `start_date` (date, requerido, fecha del primer pago)
 - `day_of_month` (integer 1-31, requerido, día del mes para el cobro)
 - `reminder_days_before` (integer, requerido, días de anticipación para recordar)
-- `shared_with` (array de UUID, opcional, usuarios invitados como lectores)
 
 ## Notificaciones
 
