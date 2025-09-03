@@ -1,0 +1,3391 @@
+{
+  "info": {
+    "name": "SSDS API – Full Test (CORREGIDO)",
+    "_postman_id": "e4fed3f4-f133-4112-ac17-bb505cb725ec",
+    "description": "Colección corregida para capturar variables según respuestas reales.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 Info",
+      "item": [
+        {
+          "name": "App Mode (público)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "accept",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/app-mode",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "app-mode"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "01 Owner & Invitaciones (captura tokens)",
+      "item": [
+        {
+          "name": "Owner: Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{owner_email}}\",\n  \"password\": \"{{owner_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Owner login OK\", ()=>pm.response.to.have.status(200));",
+                  "var j = pm.response.json();",
+                  "pm.collectionVariables.set(\"owner_token\", j.token);",
+                  "pm.collectionVariables.set(\"auth_token\", j.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Owner: /users/me (capturar owner_id)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Me OK o Unauth\", ()=>pm.expect([200,401]).to.include(pm.response.code));",
+                  "if (pm.response.code === 200) { ",
+                  "  var j = pm.response.json();",
+                  "  if (j && j.user && j.user.id) pm.collectionVariables.set(\"owner_id\", j.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear Grupo A",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Casa Roomies\",\n  \"description\": \"Gastos A\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Grupo A creado\", ()=>pm.response.to.have.status(201));",
+                  "var j = pm.response.json();",
+                  "var gid = jpath(j, ['group','id']) || j.id || firstId(j);",
+                  "if (gid) pm.collectionVariables.set(\"groupA_id\", gid);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear Grupo B",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Oficina\",\n  \"description\": \"Grupo B\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Grupo B creado\", ()=>pm.response.to.have.status(201));",
+                  "var j = pm.response.json();",
+                  "var gid = jpath(j, ['group','id']) || j.id || firstId(j);",
+                  "if (gid) pm.collectionVariables.set(\"groupB_id\", gid);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invitar User1",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/invitations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "invitations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invitee_email\": \"{{user1_email}}\",\n  \"group_id\": \"{{groupA_id}}\",\n  \"expires_in_days\": 14\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Inv1 creada\", ()=>pm.response.to.have.status(201));",
+                  "var j = pm.response.json();",
+                  "if (j.invitation && j.invitation.token) pm.collectionVariables.set(\"inv1_token\", j.invitation.token);",
+                  "if (j.registration_token && j.registration_token.token) pm.collectionVariables.set(\"reg1_token\", j.registration_token.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invitar User2",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/invitations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "invitations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invitee_email\": \"{{user2_email}}\",\n  \"group_id\": \"{{groupA_id}}\",\n  \"expires_in_days\": 14\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Inv2 creada\", ()=>pm.response.to.have.status(201));",
+                  "var j = pm.response.json();",
+                  "if (j.invitation && j.invitation.token) pm.collectionVariables.set(\"inv2_token\", j.invitation.token);",
+                  "if (j.registration_token && j.registration_token.token) pm.collectionVariables.set(\"reg2_token\", j.registration_token.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Invitar User3",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/invitations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "invitations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invitee_email\": \"{{user3_email}}\",\n  \"group_id\": \"{{groupB_id}}\",\n  \"expires_in_days\": 14\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Inv3 creada\", ()=>pm.response.to.have.status(201));",
+                  "var j = pm.response.json();",
+                  "if (j.invitation && j.invitation.token) pm.collectionVariables.set(\"inv3_token\", j.invitation.token);",
+                  "if (j.registration_token && j.registration_token.token) pm.collectionVariables.set(\"reg3_token\", j.registration_token.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Verificar invitación (pública) User1",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/invitations/token/{{inv1_token}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "invitations",
+                "token",
+                "{{inv1_token}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Verificar invitación (pública) User2",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/invitations/token/{{inv2_token}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "invitations",
+                "token",
+                "{{inv2_token}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Verificar invitación (pública) User3",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/invitations/token/{{inv3_token}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "invitations",
+                "token",
+                "{{inv3_token}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Registro + Login + Aceptar",
+      "item": [
+        {
+          "name": "User1: Register con registration_token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{user1_name}}\",\n  \"email\": \"{{user1_email}}\",\n  \"password\": \"{{user1_password}}\",\n  \"password_confirmation\": \"{{user1_password}}\",\n  \"registration_token\": \"{{reg1_token}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test('Register User1 OK', ()=>pm.expect([200,201]).to.include(pm.response.code));",
+                  "var j = pm.response.json();",
+                  "if (j.token) pm.collectionVariables.set(\"user1_token\", j.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User1: Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user1_email}}\",\n  \"password\": \"{{user1_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Login User1 OK\", ()=>pm.response.to.have.status(200));",
+                  "var j = pm.response.json();",
+                  "pm.collectionVariables.set(\"user1_token\", j.token);",
+                  "pm.collectionVariables.set(\"auth_token\", j.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User1: /users/me (capturar id)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user1_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Me User1 200\", ()=>pm.response.to.have.status(200));",
+                  "var j = pm.response.json();",
+                  "if (j && j.user && j.user.id) pm.collectionVariables.set(\"user1_id\", j.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User1: Aceptar invitación (invitation.token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/invitations/accept",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "invitations",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{inv1_token}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user1_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test('Accept User1 OK', ()=>pm.expect([200,201]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User2: Register con registration_token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{user2_name}}\",\n  \"email\": \"{{user2_email}}\",\n  \"password\": \"{{user2_password}}\",\n  \"password_confirmation\": \"{{user2_password}}\",\n  \"registration_token\": \"{{reg2_token}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test('Register User2 OK', ()=>pm.expect([200,201]).to.include(pm.response.code));",
+                  "var j = pm.response.json();",
+                  "if (j.token) pm.collectionVariables.set(\"user2_token\", j.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User2: Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user2_email}}\",\n  \"password\": \"{{user2_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Login User2 OK\", ()=>pm.response.to.have.status(200));",
+                  "var j = pm.response.json();",
+                  "pm.collectionVariables.set(\"user2_token\", j.token);",
+                  "pm.collectionVariables.set(\"auth_token\", j.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User2: /users/me (capturar id)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user2_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Me User2 200\", ()=>pm.response.to.have.status(200));",
+                  "var j = pm.response.json();",
+                  "if (j && j.user && j.user.id) pm.collectionVariables.set(\"user2_id\", j.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User2: Aceptar invitación (invitation.token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/invitations/accept",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "invitations",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{inv2_token}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user2_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test('Accept User2 OK', ()=>pm.expect([200,201]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User3: Register con registration_token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"{{user3_name}}\",\n  \"email\": \"{{user3_email}}\",\n  \"password\": \"{{user3_password}}\",\n  \"password_confirmation\": \"{{user3_password}}\",\n  \"registration_token\": \"{{reg3_token}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test('Register User3 OK', ()=>pm.expect([200,201]).to.include(pm.response.code));",
+                  "var j = pm.response.json();",
+                  "if (j.token) pm.collectionVariables.set(\"user3_token\", j.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User3: Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{user3_email}}\",\n  \"password\": \"{{user3_password}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Login User3 OK\", ()=>pm.response.to.have.status(200));",
+                  "var j = pm.response.json();",
+                  "pm.collectionVariables.set(\"user3_token\", j.token);",
+                  "pm.collectionVariables.set(\"auth_token\", j.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User3: /users/me (capturar id)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user3_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Me User3 200\", ()=>pm.response.to.have.status(200));",
+                  "var j = pm.response.json();",
+                  "if (j && j.user && j.user.id) pm.collectionVariables.set(\"user3_id\", j.user.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User3: Aceptar invitación (invitation.token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/invitations/accept",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "invitations",
+                "accept"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{inv3_token}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user3_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test('Accept User3 OK', ()=>pm.expect([200,201]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 Grupos y Miembros",
+      "item": [
+        {
+          "name": "User1: Mis grupos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user1_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', ()=>pm.expect([200,204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User2: Mis grupos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user2_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', ()=>pm.expect([200,204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User3: Mis grupos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/groups",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user3_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', ()=>pm.expect([200,204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Owner: Detalle Grupo A",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/groups/{{groupA_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{groupA_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"owner_token\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Owner: Detalle Grupo B",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/groups/{{groupB_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{groupB_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"owner_token\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Owner: Balances Grupo A",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/groups/{{groupA_id}}/balances",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{groupA_id}}",
+                "balances"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"owner_token\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Owner: Balances Grupo B",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/groups/{{groupB_id}}/balances",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "groups",
+                "{{groupB_id}}",
+                "balances"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"owner_token\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 Gastos (3 ejemplos)",
+      "item": [
+        {
+          "name": "Gasto colaborativo (User1 paga, GA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/expenses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "expenses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"S\\u00faper semana\",\n  \"total_amount\": 1200.5,\n  \"group_id\": \"{{groupA_id}}\",\n  \"expense_date\": \"2025-09-01\",\n  \"has_ticket\": true,\n  \"ticket_image_url\": \"https://example.com/tickets/market.png\",\n  \"participants\": [\n    {\n      \"user_id\": \"{{user1_id}}\",\n      \"amount_due\": 600.25\n    },\n    {\n      \"user_id\": \"{{user2_id}}\",\n      \"amount_due\": 600.25\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user1_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Expense1 creado\", ()=>pm.response.to.have.status(201));",
+                  "var j = pm.response.json(); var eid = j.id || (j.expense && j.expense.id) || firstId(j);",
+                  "if (eid) pm.collectionVariables.set(\"expense1_id\", eid);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aprobar gasto1 (User1 pagador)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/expenses/{{expense1_id}}/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "expenses",
+                "{{expense1_id}}",
+                "approve"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user1_token\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gasto individual (User2, GA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/expenses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "expenses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Taxi personal\",\n  \"total_amount\": 200.0,\n  \"group_id\": \"{{groupA_id}}\",\n  \"expense_date\": \"2025-09-01\",\n  \"has_ticket\": false,\n  \"participants\": [\n    {\n      \"user_id\": \"{{user2_id}}\",\n      \"amount_due\": 200.0\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user2_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Expense2 creado\", ()=>pm.response.to.have.status(201));",
+                  "var j = pm.response.json(); var eid = j.id || (j.expense && j.expense.id) || firstId(j);",
+                  "if (eid) pm.collectionVariables.set(\"expense2_id\", eid);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Gasto con ticket (User3, GB)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/expenses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "expenses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Pizza oficina\",\n  \"total_amount\": 450.0,\n  \"group_id\": \"{{groupB_id}}\",\n  \"expense_date\": \"2025-09-01\",\n  \"has_ticket\": true,\n  \"ticket_image_url\": \"https://example.com/tickets/pizza.png\",\n  \"participants\": [\n    {\n      \"user_id\": \"{{user3_id}}\",\n      \"amount_due\": 450.0\n    }\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user3_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Expense3 creado\", ()=>pm.response.to.have.status(201));",
+                  "var j = pm.response.json(); var eid = j.id || (j.expense && j.expense.id) || firstId(j);",
+                  "if (eid) pm.collectionVariables.set(\"expense3_id\", eid);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 Pagos (aprobado y rechazado)",
+      "item": [
+        {
+          "name": "Pago1: User2 ➜ User1 (GA)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"group_id\": \"{{groupA_id}}\",\n  \"from_user_id\": \"{{user2_id}}\",\n  \"to_user_id\": \"{{user1_id}}\",\n  \"amount\": 600.25,\n  \"note\": \"Transferencia SPEI\",\n  \"evidence_url\": \"https://example.com/evidence/spei.png\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user2_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Payment1 creado\", ()=>pm.response.to.have.status(201));",
+                  "var j = pm.response.json(); var pid = j.id || (j.payment && j.payment.id) || firstId(j);",
+                  "if (pid) pm.collectionVariables.set(\"payment1_id\", pid);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aprobar Payment1 (User1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments/{{payment1_id}}/approve",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "{{payment1_id}}",
+                "approve"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user1_token\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pago2: User3 ➜ Owner (GB)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "payments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"group_id\": \"{{groupB_id}}\",\n  \"from_user_id\": \"{{user3_id}}\",\n  \"to_user_id\": \"{{owner_id}}\",\n  \"amount\": 300.0,\n  \"note\": \"Efectivo\",\n  \"evidence_url\": \"https://example.com/evidence/cash.jpg\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user3_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Payment2 creado\", ()=>pm.response.to.have.status(201));",
+                  "var j = pm.response.json(); var pid = j.id || (j.payment && j.payment.id) || firstId(j);",
+                  "if (pid) pm.collectionVariables.set(\"payment2_id\", pid);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar Payment2 (Owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments/{{payment2_id}}/reject",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "{{payment2_id}}",
+                "reject"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"owner_token\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User1: payments/due (GA)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/payments/due?group_id={{groupA_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "payments",
+                "due?group_id={{groupA_id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user1_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Due OK\", ()=>pm.expect([200,204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 Pagos Recurrentes (3 ejemplos)",
+      "item": [
+        {
+          "name": "Rec1 (Owner: renta 12m, share U1/U2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/recurring-payments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "recurring-payments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Renta departamento\",\n  \"amount_monthly\": 8000,\n  \"months\": 12,\n  \"shared_with\": [\n    \"{{user1_id}}\",\n    \"{{user2_id}}\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"owner_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Rec1 OK\", ()=>pm.response.to.have.status(201));",
+                  "var j = pm.response.json(); var id = j.id || (j.recurring_payment && j.recurring_payment.id) || firstId(j);",
+                  "if (id) pm.collectionVariables.set(\"recpay1_id\", id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rec2 (User2: internet 6m, share U1)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/recurring-payments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "recurring-payments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Internet hogar\",\n  \"amount_monthly\": 600,\n  \"months\": 6,\n  \"shared_with\": [\n    \"{{user1_id}}\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user2_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Rec2 OK\", ()=>pm.response.to.have.status(201));",
+                  "var j = pm.response.json(); var id = j.id || (j.recurring_payment && j.recurring_payment.id) || firstId(j);",
+                  "if (id) pm.collectionVariables.set(\"recpay2_id\", id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rec3 (User3: mantenimiento 3m, lector Owner)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/recurring-payments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "recurring-payments"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Mantenimiento oficina\",\n  \"amount_monthly\": 1200,\n  \"months\": 3,\n  \"shared_with\": [\n    \"{{owner_id}}\"\n  ]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user3_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "",
+                  "",
+                  "function jpath(obj, pathArr) {",
+                  "  try {",
+                  "    return pathArr.reduce((o,k)=> (o && (k in o)) ? o[k] : undefined, obj);",
+                  "  } catch(e){ return undefined; }",
+                  "}",
+                  "function firstId(obj) {",
+                  "  if (!obj || typeof obj !== 'object') return undefined;",
+                  "  if (obj.id) return obj.id;",
+                  "  const keys = ['group','invitation','expense','payment','recurring_payment','data','user'];",
+                  "  for (let k of keys) {",
+                  "    if (obj[k] && obj[k].id) return obj[k].id;",
+                  "  }",
+                  "  const uuidLike = /[0-9a-fA-F-]{20,}/;",
+                  "  for (let [k,v] of Object.entries(obj)) {",
+                  "    if (v && typeof v === 'object' && v.id) return v.id;",
+                  "    if (typeof v === 'string' && uuidLike.test(v)) return v;",
+                  "  }",
+                  "  return undefined;",
+                  "}",
+                  "",
+                  "pm.test(\"Rec3 OK\", ()=>pm.response.to.have.status(201));",
+                  "var j = pm.response.json(); var id = j.id || (j.recurring_payment && j.recurring_payment.id) || firstId(j);",
+                  "if (id) pm.collectionVariables.set(\"recpay3_id\", id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar recurrentes (User3)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/recurring-payments",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "recurring-payments"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user3_token\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "07 Dashboard y Reportes",
+      "item": [
+        {
+          "name": "User1: Dashboard (GA hoy)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/dashboard/summary?groupId={{groupA_id}}&startDate=2025-09-01&endDate=2025-09-01",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "dashboard",
+                "summary?groupId={groupA_id}&startDate=2025-09-01&endDate=2025-09-01"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user1_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Dashboard OK\", ()=>pm.expect([200,204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Owner: Reportes (GB mensual, any)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/reports?groupId={{groupB_id}}&granularity=month&paymentStatus=any",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "reports?groupId={{groupB_id}}&granularity=month&paymentStatus=any"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"owner_token\"));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Reportes OK\", ()=>pm.expect([200,204]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "08 Notificaciones (3 dispositivos)",
+      "item": [
+        {
+          "name": "User1: registrar web",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/register-device",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "register-device"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_token\": \"web-{{user1_id}}-token\",\n  \"device_type\": \"web\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user1_token\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User2: registrar android",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/register-device",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "register-device"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_token\": \"android-{{user2_id}}-token\",\n  \"device_type\": \"android\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user2_token\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User3: registrar ios",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/notifications/register-device",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "notifications",
+                "register-device"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"device_token\": \"ios-{{user3_id}}-token\",\n  \"device_type\": \"ios\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user3_token\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09 Cambios/Logout/Eliminar",
+      "item": [
+        {
+          "name": "User1: cambiar contraseña",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me/password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"current_password\": \"{{user1_password}}\",\n  \"password\": \"NewPass123!\",\n  \"password_confirmation\": \"NewPass123!\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user1_token\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User1: logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "logout"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user1_token\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User3: eliminar cuenta",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user3_token\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 Usuarios: Update perfil (3 ejemplos)",
+      "item": [
+        {
+          "name": "User1: actualizar nombre",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Demo (edit)\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user1_token\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User2: actualizar teléfono",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"phone_number\": \"+52 555 111 2222\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user2_token\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "User3: actualizar foto",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profile_picture_url\": \"https://example.com/avatar3.png\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"auth_token\", pm.collectionVariables.get(\"user3_token\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "owner_email",
+      "value": "owner@test.com"
+    },
+    {
+      "key": "owner_password",
+      "value": "Password123!"
+    },
+    {
+      "key": "user1_name",
+      "value": "Alice Demo"
+    },
+    {
+      "key": "user1_email",
+      "value": "alice@test.com"
+    },
+    {
+      "key": "user1_password",
+      "value": "Password123!"
+    },
+    {
+      "key": "user2_name",
+      "value": "Bob Demo"
+    },
+    {
+      "key": "user2_email",
+      "value": "bob@test.com"
+    },
+    {
+      "key": "user2_password",
+      "value": "Password123!"
+    },
+    {
+      "key": "user3_name",
+      "value": "Carol Demo"
+    },
+    {
+      "key": "user3_email",
+      "value": "carol@test.com"
+    },
+    {
+      "key": "user3_password",
+      "value": "Password123!"
+    },
+    {
+      "key": "auth_token",
+      "value": ""
+    },
+    {
+      "key": "owner_token",
+      "value": ""
+    },
+    {
+      "key": "owner_id",
+      "value": ""
+    },
+    {
+      "key": "groupA_id",
+      "value": ""
+    },
+    {
+      "key": "groupB_id",
+      "value": ""
+    },
+    {
+      "key": "inv1_token",
+      "value": ""
+    },
+    {
+      "key": "inv2_token",
+      "value": ""
+    },
+    {
+      "key": "inv3_token",
+      "value": ""
+    },
+    {
+      "key": "reg1_token",
+      "value": ""
+    },
+    {
+      "key": "reg2_token",
+      "value": ""
+    },
+    {
+      "key": "reg3_token",
+      "value": ""
+    },
+    {
+      "key": "user1_token",
+      "value": ""
+    },
+    {
+      "key": "user2_token",
+      "value": ""
+    },
+    {
+      "key": "user3_token",
+      "value": ""
+    },
+    {
+      "key": "user1_id",
+      "value": ""
+    },
+    {
+      "key": "user2_id",
+      "value": ""
+    },
+    {
+      "key": "user3_id",
+      "value": ""
+    },
+    {
+      "key": "expense1_id",
+      "value": ""
+    },
+    {
+      "key": "expense2_id",
+      "value": ""
+    },
+    {
+      "key": "expense3_id",
+      "value": ""
+    },
+    {
+      "key": "payment1_id",
+      "value": ""
+    },
+    {
+      "key": "payment2_id",
+      "value": ""
+    },
+    {
+      "key": "recpay1_id",
+      "value": ""
+    },
+    {
+      "key": "recpay2_id",
+      "value": ""
+    },
+    {
+      "key": "recpay3_id",
+      "value": ""
+    }
+  ]
+}
