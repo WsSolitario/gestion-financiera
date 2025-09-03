@@ -74,7 +74,8 @@ class InvitationController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
+        $userId  = $request->user()->id;
+        $modeApp = config('app.mode_app');
 
         $data = $request->validate([
             'invitee_email'   => ['required', 'email', 'max:255'],
@@ -131,7 +132,7 @@ class InvitationController extends Controller
             ->whereRaw('LOWER(email) = ?', [mb_strtolower($data['invitee_email'])])
             ->exists();
 
-        if (!$userExists) {
+        if (!$userExists && $modeApp !== 'public') {
             $regToken = Str::random(64);
             $regId    = (string) Str::uuid();
 
@@ -157,11 +158,16 @@ class InvitationController extends Controller
             Log::error('Error enviando invitación Brevo', ['exception' => $e->getMessage()]);
         }
 
-        return response()->json([
-            'message'           => 'Invitación creada',
-            'invitation'        => $this->formatInvitation($row, true),
-            'registration_token'=> $registration,
-        ], 201);
+        $response = [
+            'message'    => 'Invitación creada',
+            'invitation' => $this->formatInvitation($row, true),
+        ];
+
+        if ($registration) {
+            $response['registration_token'] = $registration;
+        }
+
+        return response()->json($response, 201);
     }
 
     /**

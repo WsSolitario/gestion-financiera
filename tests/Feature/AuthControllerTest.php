@@ -19,6 +19,8 @@ class AuthControllerTest extends TestCase
 
     public function test_user_can_register_with_invitation(): void
     {
+        config(['app.mode_app' => 'private']);
+
         $owner = User::factory()->create();
         $group = Group::factory()->create(['owner_id' => $owner->id]);
 
@@ -70,6 +72,38 @@ class AuthControllerTest extends TestCase
         ]);
     }
 
+    public function test_invitation_in_public_mode_has_no_registration_token(): void
+    {
+        config(['app.mode_app' => 'public']);
+
+        $owner = User::factory()->create();
+        $group = Group::factory()->create(['owner_id' => $owner->id]);
+
+        DB::table('group_members')->insert([
+            'id' => (string) Str::uuid(),
+            'group_id' => $group->id,
+            'user_id' => $owner->id,
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
+
+        $inviteEmail = 'invitee@example.com';
+        Http::fake();
+
+        $this->actingAs($owner, 'sanctum');
+        $response = $this->postJson('/api/invitations', [
+            'invitee_email' => $inviteEmail,
+            'group_id' => $group->id,
+        ])->assertStatus(201);
+
+        $response->assertJsonMissingPath('registration_token');
+        Http::assertSentCount(1);
+
+        $this->assertDatabaseMissing('registration_tokens', [
+            'email' => $inviteEmail,
+        ]);
+    }
+
     public function test_user_can_login_with_valid_credentials(): void
     {
         $password = 'secret123';
@@ -107,7 +141,5 @@ class AuthControllerTest extends TestCase
             ->assertJson([
                 'message' => 'Cuenta desactivada',
             ]);
-    }
-
     }
 }
