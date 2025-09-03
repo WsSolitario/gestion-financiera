@@ -2418,7 +2418,7 @@
             "name": "06 Pagos recurrentes",
             "item": [
                 {
-                    "name": "User1: Crear pago recurrente (compartido con User2 y User3)",
+                    "name": "User1: Crear pago recurrente",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -2448,7 +2448,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"title\": \"{{recurring_title}}\",\n  \"description\": \"{{recurring_description}}\",\n  \"amount_monthly\": {{recurring_amount_monthly}},\n  \"months\": {{recurring_months}},\n  \"start_date\": \"{{recurring_start_date}}\",\n  \"day_of_month\": {{recurring_day_of_month}},\n  \"reminder_days_before\": {{recurring_reminder_days_before}},\n  \"shared_with\": [\n    \"{{user2_id}}\",\n    \"{{user3_id}}\"\n  ]\n}"
+                            "raw": "{\n  \"title\": \"{{recurring_title}}\",\n  \"description\": \"{{recurring_description}}\",\n  \"amount_monthly\": {{recurring_amount_monthly}},\n  \"months\": {{recurring_months}},\n  \"start_date\": \"{{recurring_start_date}}\",\n  \"day_of_month\": {{recurring_day_of_month}},\n  \"reminder_days_before\": {{recurring_reminder_days_before}}\n}"
                         },
                         "auth": {
                             "type": "noauth"
@@ -2480,7 +2480,7 @@
                     ]
                 },
                 {
-                    "name": "User2: Crear pago recurrente (compartido con User1)",
+                    "name": "User2: Crear pago recurrente",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -2510,7 +2510,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"title\": \"{{recurring_title}}\",\n  \"description\": \"{{recurring_description}}\",\n  \"amount_monthly\": {{recurring_amount_monthly}},\n  \"months\": {{recurring_months}},\n  \"start_date\": \"{{recurring_start_date}}\",\n  \"day_of_month\": {{recurring_day_of_month}},\n  \"reminder_days_before\": {{recurring_reminder_days_before}},\n  \"shared_with\": [\n    \"{{user1_id}}\"\n  ]\n}"
+                            "raw": "{\n  \"title\": \"{{recurring_title}}\",\n  \"description\": \"{{recurring_description}}\",\n  \"amount_monthly\": {{recurring_amount_monthly}},\n  \"months\": {{recurring_months}},\n  \"start_date\": \"{{recurring_start_date}}\",\n  \"day_of_month\": {{recurring_day_of_month}},\n  \"reminder_days_before\": {{recurring_reminder_days_before}}\n}"
                         },
                         "auth": {
                             "type": "noauth"
@@ -2542,7 +2542,7 @@
                     ]
                 },
                 {
-                    "name": "User3: Crear pago recurrente (compartido con User1 y User2)",
+                    "name": "User3: Crear pago recurrente",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -2572,7 +2572,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"title\": \"{{recurring_title}}\",\n  \"description\": \"{{recurring_description}}\",\n  \"amount_monthly\": {{recurring_amount_monthly}},\n  \"months\": {{recurring_months}},\n  \"start_date\": \"{{recurring_start_date}}\",\n  \"day_of_month\": {{recurring_day_of_month}},\n  \"reminder_days_before\": {{recurring_reminder_days_before}},\n  \"shared_with\": [\n    \"{{user1_id}}\",\n    \"{{user2_id}}\"\n  ]\n}"
+                            "raw": "{\n  \"title\": \"{{recurring_title}}\",\n  \"description\": \"{{recurring_description}}\",\n  \"amount_monthly\": {{recurring_amount_monthly}},\n  \"months\": {{recurring_months}},\n  \"start_date\": \"{{recurring_start_date}}\",\n  \"day_of_month\": {{recurring_day_of_month}},\n  \"reminder_days_before\": {{recurring_reminder_days_before}}\n}"
                         },
                         "auth": {
                             "type": "noauth"

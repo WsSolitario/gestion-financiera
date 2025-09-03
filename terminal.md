@@ -1429,7 +1429,7 @@ POST http://localhost:8000/api/recurring-payments: {
     "connection": "keep-alive",
     "content-length": "194"
   },
-  "Request Body": "{\n  \"description\": \"Renta departamento\",\n  \"amount_monthly\": 8000,\n  \"months\": 12,\n  \"shared_with\": [\n    \"6464d4c1-b815-4376-b477-42ce44ec1f67\",\n    \"d40825d4-4ed8-4008-afc9-27267d398129\"\n  ]\n}",
+  "Request Body": "{\n  \"description\": \"Renta departamento\",\n  \"amount_monthly\": 8000,\n  \"months\": 12\n}",
   "Response Headers": {
     "host": "localhost:8000",
     "connection": "close",
@@ -1467,7 +1467,7 @@ POST http://localhost:8000/api/recurring-payments: {
     "connection": "keep-alive",
     "content-length": "144"
   },
-  "Request Body": "{\n  \"description\": \"Internet hogar\",\n  \"amount_monthly\": 600,\n  \"months\": 6,\n  \"shared_with\": [\n    \"6464d4c1-b815-4376-b477-42ce44ec1f67\"\n  ]\n}",
+  "Request Body": "{\n  \"description\": \"Internet hogar\",\n  \"amount_monthly\": 600,\n  \"months\": 6\n}",
   "Response Headers": {
     "host": "localhost:8000",
     "connection": "close",
@@ -1505,7 +1505,7 @@ POST http://localhost:8000/api/recurring-payments: {
     "connection": "keep-alive",
     "content-length": "152"
   },
-  "Request Body": "{\n  \"description\": \"Mantenimiento oficina\",\n  \"amount_monthly\": 1200,\n  \"months\": 3,\n  \"shared_with\": [\n    \"b078c0ee-803e-44f4-a9e3-c80a3bcca963\"\n  ]\n}",
+  "Request Body": "{\n  \"description\": \"Mantenimiento oficina\",\n  \"amount_monthly\": 1200,\n  \"months\": 3\n}",
   "Response Headers": {
     "host": "localhost:8000",
     "connection": "close",
