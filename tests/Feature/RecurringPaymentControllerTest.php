@@ -12,6 +12,7 @@ class RecurringPaymentControllerTest extends TestCase
     use RefreshDatabase;
 
     public function test_user_can_create_and_list_their_recurring_payment(): void
+    public function test_user_can_create_recurring_payment(): void
     {
         $owner = User::create([
             'id' => (string) Str::uuid(),

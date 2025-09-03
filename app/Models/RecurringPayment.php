@@ -34,9 +34,4 @@ class RecurringPayment extends Model
     {
         return $this->belongsTo(User::class, 'user_id');
     }
-
-    public function viewers()
-    {
-        return $this->belongsToMany(User::class, 'recurring_payment_viewers');
-    }
 }
