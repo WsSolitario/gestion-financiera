@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class InvitationExpensePaymentFlowTest extends TestCase
@@ -27,6 +28,7 @@ class InvitationExpensePaymentFlowTest extends TestCase
 
         // Invite new member
         $inviteEmail = 'flowuser@example.com';
+        Http::fake(['api.brevo.com/*' => Http::response()]);
         $this->actingAs($owner, 'sanctum');
         $inv = $this->postJson('/api/invitations', [
             'invitee_email' => $inviteEmail,
@@ -34,6 +36,18 @@ class InvitationExpensePaymentFlowTest extends TestCase
         ])->assertStatus(201);
         $token    = $inv->json('invitation.token');
         $regToken = $inv->json('registration_token.token');
+
+        $expectedLink = config('app.url') . "/invitations/token/{$token}";
+        $expectedName = Str::before($inviteEmail, '@');
+
+        Http::assertSent(function ($req) use ($inviteEmail, $expectedLink, $expectedName) {
+            return $req->url() === 'https://api.brevo.com/v3/smtp/email'
+                && $req->method() === 'POST'
+                && $req['to'][0]['email'] === $inviteEmail
+                && str_contains($req['htmlContent'], $expectedName)
+                && str_contains($req['htmlContent'], $expectedLink);
+        });
+        Http::assertSentCount(1);
 
         // Register invited user
         $this->postJson('/api/auth/register', [
