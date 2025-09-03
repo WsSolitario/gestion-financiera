@@ -2,6 +2,13 @@
 
 Todas las rutas están bajo el prefijo `/api`. A menos que se indique lo contrario, los endpoints requieren autenticación con un token de Laravel Sanctum enviado en el encabezado `Authorization: Bearer {token}`.
 
+La aplicación opera en dos modos controlados por la variable de entorno `MODE_APP`:
+
+- `private`: el registro de usuarios exige un `registration_token` válido.
+- `public`: el registro es abierto y no necesita `registration_token`.
+
+Para cambiar el modo edita el archivo `.env`, ajusta `MODE_APP` y ejecuta `php artisan config:clear`.
+
 ## Flujos completos
 
 ### Autenticación - Login
@@ -151,7 +158,7 @@ POST /api/notifications/register-device
 
 2. **Registrar un usuario con los tokens**
 
-   El invitado usa el `registration_token` recibido y opcionalmente el `group_token` para registrarse vía `POST /api/auth/register`.
+  Si `MODE_APP=private`, el invitado usa el `registration_token` recibido y opcionalmente el `group_token` para registrarse vía `POST /api/auth/register`. En modo `public` puede registrarse sin `registration_token`.
 
    ```http
    POST /api/auth/register
@@ -182,7 +189,7 @@ POST /api/notifications/register-device
 
    Si el correo no está asociado a un usuario, la invitación genera **dos** tokens:
 
-   - `registration_token`: para crear la cuenta mediante `POST /api/auth/register`.
+  - `registration_token`: para crear la cuenta mediante `POST /api/auth/register` (solo en modo `private`).
    - `group_token` (`invitation_token`): para unirse al grupo después del registro mediante `POST /api/invitations/accept`.
 
    El cliente debe manejar ambos tokens en el flujo de alta de usuario.
@@ -197,7 +204,7 @@ Registra un usuario utilizando un token de registro.
 - `email` (string, requerido)
 - `password` (string, min 8, requerido)
 - `password_confirmation` (string, debe coincidir)
-- `registration_token` (string, requerido)
+- `registration_token` (string, requerido en modo `private`)
 - `invitation_token` (string, opcional)
 - `profile_picture_url` (url, opcional)
 - `phone_number` (string, opcional)

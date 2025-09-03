@@ -1,4 +1,6 @@
-Peticiones de postman para la documentacion y arreglo de problemas 
+Peticiones de postman para la documentacion y arreglo de problemas
+
+Los ejemplos se generaron con `MODE_APP=private`, donde el campo `registration_token` es obligatorio al registrarse. Para permitir registros sin token cambia a `MODE_APP=public` en el `.env` y ejecuta `php artisan config:clear`.
 
 POST http://localhost:8000/api/auth/login: {
   "Network": {

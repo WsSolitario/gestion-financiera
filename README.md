@@ -71,6 +71,7 @@ Variables principales:
 | `DB_DATABASE`   | Nombre de la base de datos.                      |
 | `DB_USERNAME`   | Usuario con acceso a la base.                    |
 | `DB_PASSWORD`   | Contraseña del usuario.                          |
+| `MODE_APP`      | `private` exige `registration_token`; `public` permite registro abierto. |
 
 Ejemplo de configuración:
 
@@ -84,6 +85,14 @@ DB_PASSWORD=postgres
 ```
 
 El proyecto está pensado para PostgreSQL. Ajusta las variables anteriores según tu entorno.
+
+El modo de la aplicación se controla con `MODE_APP`. Tras cambiarlo en el `.env` ejecuta:
+
+```bash
+php artisan config:clear
+```
+
+En modo `private` el endpoint `POST /api/auth/register` requiere un `registration_token`. En modo `public` este campo no es necesario y cualquiera puede registrarse.
 
 ## Comandos básicos
 
@@ -143,7 +152,7 @@ Token de invitación para newuser@example.com:
 INVTOKEN456...
 ```
 
-Con estos tokens se puede registrar un usuario con el endpoint:
+El `registration_token` solo es necesario cuando `MODE_APP=private`. Con estos tokens se puede registrar un usuario con el endpoint:
 
 ```http
 POST /api/auth/register
@@ -152,8 +161,8 @@ POST /api/auth/register
   "email": "newuser@example.com",
   "password": "secret1234",
   "password_confirmation": "secret1234",
-  "registration_token": "REGTOKEN123...",
-  "invitation_token": "INVTOKEN456..."
+  "registration_token": "REGTOKEN123...", // requerido en modo privado
+  "invitation_token": "INVTOKEN456..." // opcional
 }
 ```
 

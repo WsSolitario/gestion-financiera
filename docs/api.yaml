@@ -2,6 +2,10 @@ openapi: 3.0.0
 info:
   title: Gestión Financiera API
   version: '1.0.0'
+  description: >
+    La variable de entorno MODE_APP controla el modo de registro. En `private` se
+    exige `registration_token`; en `public` el registro es abierto. Tras cambiarla
+    en el `.env`, ejecutar `php artisan config:clear`.
 servers:
   - url: http://localhost/api
     description: Desarrollo local
@@ -24,7 +28,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [name, email, password, password_confirmation, registration_token]
+              required: [name, email, password, password_confirmation]
               properties:
                 name:
                   type: string
@@ -39,6 +43,7 @@ paths:
                   format: password
                 registration_token:
                   type: string
+                  description: Requerido solo cuando MODE_APP=private
                 invitation_token:
                   type: string
                 profile_picture_url:
@@ -51,7 +56,7 @@ paths:
               email: juan@example.com
               password: secret123
               password_confirmation: secret123
-              registration_token: REG123
+              registration_token: REG123 # requerido en modo private
               invitation_token: ABC123
       responses:
         '201':
