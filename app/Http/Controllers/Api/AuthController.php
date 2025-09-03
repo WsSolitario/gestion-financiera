@@ -21,14 +21,16 @@ class AuthController extends Controller
      * POST /api/auth/register
      * Requiere: name, email, password, password_confirmation, registration_token
      * Opcional: invitation_token para unirse a un grupo
-     */
+    */
     public function register(Request $request): JsonResponse
     {
+        $isPublic = config('app.mode_app') === 'public';
+
         $data = $request->validate([
             'name'                => ['required', 'string', 'max:100'],
             'email'               => ['required', 'email', 'max:255', 'unique:users,email'],
             'password'            => ['required', 'string', 'min:8', 'confirmed'],
-            'registration_token'  => ['required', 'string'],
+            'registration_token'  => [$isPublic ? 'nullable' : 'required', 'string'],
             'invitation_token'    => ['sometimes', 'nullable', 'string'],
             'profile_picture_url' => ['sometimes', 'nullable', 'url'],
             'phone_number'        => ['sometimes', 'nullable', 'string', 'max:50'],
@@ -72,40 +74,44 @@ class AuthController extends Controller
         $now = now();
 
         /** @var \App\Models\User $user */
-        $user = DB::transaction(function () use ($data, $invitation, $now) {
+        $user = DB::transaction(function () use ($data, $invitation, $now, $isPublic) {
             /** @var RegistrationToken|null $regToken */
-            $regToken = RegistrationToken::where('token', $data['registration_token'])
-                ->lockForUpdate()
-                ->first();
+            $regToken = null;
 
-            if (! $regToken) {
-                throw ValidationException::withMessages([
-                    'registration_token' => ['Token de registro no encontrado.'],
-                ]);
-            }
+            if (! $isPublic) {
+                $regToken = RegistrationToken::where('token', $data['registration_token'])
+                    ->lockForUpdate()
+                    ->first();
 
-            if ($regToken->status !== 'pending') {
-                throw ValidationException::withMessages([
-                    'registration_token' => ['El token de registro no está disponible (estado: '.$regToken->status.').'],
-                ]);
-            }
+                if (! $regToken) {
+                    throw ValidationException::withMessages([
+                        'registration_token' => ['Token de registro no encontrado.'],
+                    ]);
+                }
 
-            $isExpiredReg = !empty($regToken->expires_at)
-                && Carbon::parse($regToken->expires_at)->isPast();
+                if ($regToken->status !== 'pending') {
+                    throw ValidationException::withMessages([
+                        'registration_token' => ['El token de registro no está disponible (estado: '.$regToken->status.').'],
+                    ]);
+                }
 
-            if ($isExpiredReg) {
-                RegistrationToken::where('id', $regToken->id)
-                    ->where('status', 'pending')
-                    ->update(['status' => 'expired']);
-                throw ValidationException::withMessages([
-                    'registration_token' => ['El token de registro ha expirado.'],
-                ]);
-            }
+                $isExpiredReg = !empty($regToken->expires_at)
+                    && Carbon::parse($regToken->expires_at)->isPast();
 
-            if (strcasecmp($regToken->email, $data['email']) !== 0) {
-                throw ValidationException::withMessages([
-                    'email' => ['El email no coincide con el del token de registro.'],
-                ]);
+                if ($isExpiredReg) {
+                    RegistrationToken::where('id', $regToken->id)
+                        ->where('status', 'pending')
+                        ->update(['status' => 'expired']);
+                    throw ValidationException::withMessages([
+                        'registration_token' => ['El token de registro ha expirado.'],
+                    ]);
+                }
+
+                if (strcasecmp($regToken->email, $data['email']) !== 0) {
+                    throw ValidationException::withMessages([
+                        'email' => ['El email no coincide con el del token de registro.'],
+                    ]);
+                }
             }
 
             // Generar UUID explícito para evitar user_id NULL en pivots
@@ -147,9 +153,11 @@ class AuthController extends Controller
                 ]);
             }
 
-            RegistrationToken::where('id', $regToken->id)
-                ->where('status', 'pending')
-                ->update(['status' => 'used']);
+            if (! $isPublic) {
+                RegistrationToken::where('id', $regToken->id)
+                    ->where('status', 'pending')
+                    ->update(['status' => 'used']);
+            }
 
             return $user;
         });
