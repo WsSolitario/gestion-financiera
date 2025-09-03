@@ -4,11 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Group;
 use App\Models\User;
-use App\Models\RegistrationToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -19,6 +17,8 @@ class AuthControllerTest extends TestCase
 
     public function test_user_can_register_with_invitation(): void
     {
+        config(['app.mode_app' => 'private']);
+
         $owner = User::factory()->create();
         $group = Group::factory()->create(['owner_id' => $owner->id]);
 
@@ -32,6 +32,7 @@ class AuthControllerTest extends TestCase
 
         $inviteEmail = 'invitee@example.com';
         Http::fake();
+
         $this->actingAs($owner, 'sanctum');
         $invResponse = $this->postJson('/api/invitations', [
             'invitee_email' => $inviteEmail,
@@ -72,13 +73,14 @@ class AuthControllerTest extends TestCase
 
     public function test_user_can_register_without_registration_token_in_public_mode(): void
     {
-        Config::set('app.mode_app', 'public');
+        config(['app.mode_app' => 'public']);
 
         $response = $this->postJson('/api/auth/register', [
             'name' => 'Public User',
             'email' => 'public@example.com',
             'password' => 'secret123',
             'password_confirmation' => 'secret123',
+            // sin registration_token
         ]);
 
         $response->assertStatus(201)
@@ -90,6 +92,39 @@ class AuthControllerTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'email' => 'public@example.com',
+        ]);
+    }
+
+    public function test_invitation_in_public_mode_has_no_registration_token(): void
+    {
+        config(['app.mode_app' => 'public']);
+
+        $owner = User::factory()->create();
+        $group = Group::factory()->create(['owner_id' => $owner->id]);
+
+        DB::table('group_members')->insert([
+            'id' => (string) Str::uuid(),
+            'group_id' => $group->id,
+            'user_id' => $owner->id,
+            'role' => 'owner',
+            'joined_at' => now(),
+        ]);
+
+        $inviteEmail = 'invitee@example.com';
+        Http::fake();
+
+        $this->actingAs($owner, 'sanctum');
+        $response = $this->postJson('/api/invitations', [
+            'invitee_email' => $inviteEmail,
+            'group_id' => $group->id,
+        ])->assertStatus(201);
+
+        // En modo público, NO se debe crear/retornar registration_token
+        $response->assertJsonMissingPath('registration_token');
+        Http::assertSentCount(1);
+
+        $this->assertDatabaseMissing('registration_tokens', [
+            'email' => $inviteEmail,
         ]);
     }
 

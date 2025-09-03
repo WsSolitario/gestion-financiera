@@ -16,6 +16,8 @@ class InvitationExpensePaymentFlowTest extends TestCase
 
     public function test_full_flow_invitation_expense_payment_approval_and_rejection(): void
     {
+        config(['app.mode_app' => 'private']);
+
         $owner = User::factory()->create();
         $group = Group::factory()->create(['owner_id' => $owner->id]);
         DB::table('group_members')->insert([
