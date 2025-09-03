@@ -4,11 +4,9 @@ namespace Tests\Feature;
 
 use App\Models\Group;
 use App\Models\User;
-use App\Models\RegistrationToken;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -34,6 +32,7 @@ class AuthControllerTest extends TestCase
 
         $inviteEmail = 'invitee@example.com';
         Http::fake();
+
         $this->actingAs($owner, 'sanctum');
         $invResponse = $this->postJson('/api/invitations', [
             'invitee_email' => $inviteEmail,
@@ -72,6 +71,30 @@ class AuthControllerTest extends TestCase
         ]);
     }
 
+    public function test_user_can_register_without_registration_token_in_public_mode(): void
+    {
+        config(['app.mode_app' => 'public']);
+
+        $response = $this->postJson('/api/auth/register', [
+            'name' => 'Public User',
+            'email' => 'public@example.com',
+            'password' => 'secret123',
+            'password_confirmation' => 'secret123',
+            // sin registration_token
+        ]);
+
+        $response->assertStatus(201)
+            ->assertJsonStructure([
+                'message',
+                'token',
+                'user' => ['id', 'name', 'email'],
+            ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'public@example.com',
+        ]);
+    }
+
     public function test_invitation_in_public_mode_has_no_registration_token(): void
     {
         config(['app.mode_app' => 'public']);
@@ -96,6 +119,7 @@ class AuthControllerTest extends TestCase
             'group_id' => $group->id,
         ])->assertStatus(201);
 
+        // En modo público, NO se debe crear/retornar registration_token
         $response->assertJsonMissingPath('registration_token');
         Http::assertSentCount(1);
 

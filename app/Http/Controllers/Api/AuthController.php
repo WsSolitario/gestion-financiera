@@ -19,29 +19,38 @@ class AuthController extends Controller
 {
     /**
      * POST /api/auth/register
-     * Requiere: name, email, password, password_confirmation, registration_token
+     * Requiere: name, email, password, password_confirmation
+     * - En modo PRIVATE: registration_token requerido
+     * - En modo PUBLIC: registration_token opcional (ignorado si viene vacío)
      * Opcional: invitation_token para unirse a un grupo
-    */
+     */
     public function register(Request $request): JsonResponse
     {
         $isPublic = config('app.mode_app') === 'public';
 
-        $data = $request->validate([
+        // Primero definimos reglas base…
+        $rules = [
             'name'                => ['required', 'string', 'max:100'],
             'email'               => ['required', 'email', 'max:255', 'unique:users,email'],
             'password'            => ['required', 'string', 'min:8', 'confirmed'],
-            'registration_token'  => [$isPublic ? 'nullable' : 'required', 'string'],
             'invitation_token'    => ['sometimes', 'nullable', 'string'],
             'profile_picture_url' => ['sometimes', 'nullable', 'url'],
             'phone_number'        => ['sometimes', 'nullable', 'string', 'max:50'],
-        ]);
+        ];
+
+        // …y ajustamos la regla de registration_token según el modo.
+        $rules['registration_token'] = $isPublic
+            ? ['sometimes', 'nullable', 'string']
+            : ['required', 'string'];
+
+        $data = $request->validate($rules);
 
         /** @var Invitation|null $invitation */
         $invitation = null;
         if (!empty($data['invitation_token'])) {
             $invitation = Invitation::where('token', $data['invitation_token'])->first();
 
-            if (! $invitation) {
+            if (!$invitation) {
                 throw ValidationException::withMessages([
                     'invitation_token' => ['Token de invitación no encontrado.'],
                 ]);
@@ -49,7 +58,7 @@ class AuthController extends Controller
 
             if ($invitation->status !== 'pending') {
                 throw ValidationException::withMessages([
-                    'invitation_token' => ['La invitación no está disponible (estado: '.$invitation->status.').'],
+                    'invitation_token' => ['La invitación no está disponible (estado: ' . $invitation->status . ').'],
                 ]);
             }
 
@@ -78,12 +87,13 @@ class AuthController extends Controller
             /** @var RegistrationToken|null $regToken */
             $regToken = null;
 
-            if (! $isPublic) {
-                $regToken = RegistrationToken::where('token', $data['registration_token'])
+            // Solo validamos y consumimos RegistrationToken en modo privado.
+            if (!$isPublic) {
+                $regToken = RegistrationToken::where('token', $data['registration_token'] ?? null)
                     ->lockForUpdate()
                     ->first();
 
-                if (! $regToken) {
+                if (!$regToken) {
                     throw ValidationException::withMessages([
                         'registration_token' => ['Token de registro no encontrado.'],
                     ]);
@@ -91,7 +101,7 @@ class AuthController extends Controller
 
                 if ($regToken->status !== 'pending') {
                     throw ValidationException::withMessages([
-                        'registration_token' => ['El token de registro no está disponible (estado: '.$regToken->status.').'],
+                        'registration_token' => ['El token de registro no está disponible (estado: ' . $regToken->status . ').'],
                     ]);
                 }
 
@@ -114,31 +124,24 @@ class AuthController extends Controller
                 }
             }
 
-            // Generar UUID explícito para evitar user_id NULL en pivots
+            // Crear usuario
             $user                 = new User();
             $user->id             = (string) Str::uuid();
             $user->name           = $data['name'];
             $user->email          = $data['email'];
-
-            // ⬅️ Usa la columna de tu esquema
             $user->password_hash  = Hash::make($data['password']);
-
             $user->profile_picture_url = $data['profile_picture_url'] ?? null;
             $user->phone_number        = $data['phone_number'] ?? null;
-
-            // Si tu tabla tiene defaults/triggers para created_at/updated_at puedes omitir:
-            // $user->created_at = $now;
-            // $user->updated_at = $now;
-
             $user->save();
 
+            // Procesar invitación (agregar a grupo y marcar aceptada)
             if ($invitation) {
                 $already = DB::table('group_members')
                     ->where('group_id', $invitation->group_id)
                     ->where('user_id', $user->id)
                     ->exists();
 
-                if (! $already) {
+                if (!$already) {
                     DB::table('group_members')->insert([
                         'id'        => (string) Str::uuid(),
                         'group_id'  => $invitation->group_id,
@@ -153,7 +156,8 @@ class AuthController extends Controller
                 ]);
             }
 
-            if (! $isPublic) {
+            // Marcar token de registro como usado SOLO en modo privado
+            if (!$isPublic && $regToken) {
                 RegistrationToken::where('id', $regToken->id)
                     ->where('status', 'pending')
                     ->update(['status' => 'used']);
@@ -187,12 +191,11 @@ class AuthController extends Controller
         /** @var User|null $user */
         $user = User::whereRaw('LOWER(email) = ?', [mb_strtolower($data['email'])])->first();
 
-        // ⬅️ Verifica contra password_hash (según tu esquema)
-        if (! $user || ! Hash::check($data['password'], $user->password_hash)) {
+        if (!$user || !Hash::check($data['password'], $user->password_hash)) {
             return response()->json(['message' => 'Credenciales inválidas'], 401);
         }
 
-        if (! $user->is_active) {
+        if (!$user->is_active) {
             return response()->json(['message' => 'Cuenta desactivada'], 403);
         }
 
