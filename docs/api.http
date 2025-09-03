@@ -2,6 +2,7 @@
 @token = {{token}}
 
 ### Register
+# Si MODE_APP=private, incluye `registration_token`; en `public` omite este campo.
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
 
