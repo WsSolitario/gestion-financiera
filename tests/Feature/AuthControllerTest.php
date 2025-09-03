@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class AuthControllerTest extends TestCase
@@ -30,6 +31,7 @@ class AuthControllerTest extends TestCase
         ]);
 
         $inviteEmail = 'invitee@example.com';
+        Http::fake();
         $this->actingAs($owner, 'sanctum');
         $invResponse = $this->postJson('/api/invitations', [
             'invitee_email' => $inviteEmail,

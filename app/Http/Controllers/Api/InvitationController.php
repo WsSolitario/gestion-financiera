@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use App\Services\BrevoClient;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 
@@ -147,6 +149,12 @@ class InvitationController extends Controller
                 'token'      => $regToken,
                 'expires_at' => $expires,
             ];
+        }
+
+        try {
+            BrevoClient::sendInvitation($data['invitee_email'], $token);
+        } catch (\Throwable $e) {
+            Log::error('Error enviando invitación Brevo', ['exception' => $e->getMessage()]);
         }
 
         return response()->json([
