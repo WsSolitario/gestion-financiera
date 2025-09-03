@@ -2473,7 +2473,7 @@
                                     "const j = pm.response.json();",
                                     "function firstId(obj){try{if(!obj||typeof obj!=='object')return; if(obj.id)return obj.id; for(const v of Object.values(obj)){if(v&&typeof v==='object'&&v.id)return v.id;} }catch(e){} }",
                                     "const rid = (j && (j.id || (j.recurring_payment && j.recurring_payment.id))) || firstId(j);",
-                                    "if (rid) pm.collectionVariables.set('recpay_user1_id', rid);"
+                                    "if (rid) pm.collectionVariables.set('recpay1_id', rid);"
                                 ]
                             }
                         }
@@ -2535,7 +2535,7 @@
                                     "const j = pm.response.json();",
                                     "function firstId(obj){try{if(!obj||typeof obj!=='object')return; if(obj.id)return obj.id; for(const v of Object.values(obj)){if(v&&typeof v==='object'&&v.id)return v.id;} }catch(e){} }",
                                     "const rid = (j && (j.id || (j.recurring_payment && j.recurring_payment.id))) || firstId(j);",
-                                    "if (rid) pm.collectionVariables.set('recpay_user2_id', rid);"
+                                    "if (rid) pm.collectionVariables.set('recpay2_id', rid);"
                                 ]
                             }
                         }
@@ -2597,7 +2597,7 @@
                                     "const j = pm.response.json();",
                                     "function firstId(obj){try{if(!obj||typeof obj!=='object')return; if(obj.id)return obj.id; for(const v of Object.values(obj)){if(v&&typeof v==='object'&&v.id)return v.id;} }catch(e){} }",
                                     "const rid = (j && (j.id || (j.recurring_payment && j.recurring_payment.id))) || firstId(j);",
-                                    "if (rid) pm.collectionVariables.set('recpay_user3_id', rid);"
+                                    "if (rid) pm.collectionVariables.set('recpay3_id', rid);"
                                 ]
                             }
                         }
