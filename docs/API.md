@@ -407,7 +407,7 @@ El receptor rechaza el pago y libera deudas asociadas.
 Lista pagos recurrentes creados por el usuario.
 
 ### POST /api/recurring-payments
-Crea un nuevo pago recurrente para recordar deudas periódicas.
+Crea un nuevo pago recurrente para recordar deudas periódicas. Los pagos recurrentes son personales y no se pueden compartir.
 
 **Body**
 - `title` (string, requerido)

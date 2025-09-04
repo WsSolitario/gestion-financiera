@@ -17,6 +17,8 @@ class RecurringPaymentController extends Controller
         $items = DB::table('recurring_payments as rp')
             ->where('rp.user_id', $userId)
             ->select('rp.*')
+        $items = DB::table('recurring_payments')
+            ->where('user_id', $userId)
             ->get();
 
         return response()->json($items, 200);
@@ -52,6 +54,7 @@ class RecurringPaymentController extends Controller
                 'created_at'        => now(),
                 'updated_at'        => now(),
             ]);
+
         });
 
         $item = DB::table('recurring_payments')->where('id', $id)->first();

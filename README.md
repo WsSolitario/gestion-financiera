@@ -228,8 +228,8 @@ Laravel Sanctum salvo donde se indique.
 
 ### Pagos recurrentes
 
-- `GET /api/recurring-payments` – lista pagos recurrentes propios o compartidos.
-- `POST /api/recurring-payments` – crea un pago recurrente y permite compartirlo con otros usuarios.
+- `GET /api/recurring-payments` – lista pagos recurrentes propios.
+- `POST /api/recurring-payments` – crea un pago recurrente personal (no se puede compartir).
 
 ## Flujos de trabajo
 

@@ -21,19 +21,10 @@ return new class extends Migration
             $table->timestampsTz();
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
         });
-
-        Schema::create('recurring_payment_viewers', function (Blueprint $table) {
-            $table->uuid('recurring_payment_id');
-            $table->uuid('user_id');
-            $table->primary(['recurring_payment_id', 'user_id']);
-            $table->foreign('recurring_payment_id')->references('id')->on('recurring_payments')->onDelete('cascade');
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
-        });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('recurring_payment_viewers');
         Schema::dropIfExists('recurring_payments');
     }
 };
