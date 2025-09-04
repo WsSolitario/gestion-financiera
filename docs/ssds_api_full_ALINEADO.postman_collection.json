@@ -1,8 +1,8 @@
 {
     "info": {
-        "name": "SSDS API – Full Test (CORREGIDO)",
+        "name": "SSDS API \u2013 Full Test (CORREGIDO)",
         "_postman_id": "e4fed3f4-f133-4112-ac17-bb505cb725ec",
-        "description": "Colección corregida para capturar variables según respuestas reales.",
+        "description": "Colecci\u00f3n corregida para capturar variables seg\u00fan respuestas reales.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
@@ -10,7 +10,7 @@
             "name": "00 Info",
             "item": [
                 {
-                    "name": "App Mode (público)",
+                    "name": "App Mode (p\u00fablico)",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -533,7 +533,7 @@
                     ]
                 },
                 {
-                    "name": "Verificar invitación (pública) User1",
+                    "name": "Verificar invitaci\u00f3n (p\u00fablica) User1",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -564,7 +564,7 @@
                     }
                 },
                 {
-                    "name": "Verificar invitación (pública) User2",
+                    "name": "Verificar invitaci\u00f3n (p\u00fablica) User2",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -595,7 +595,7 @@
                     }
                 },
                 {
-                    "name": "Verificar invitación (pública) User3",
+                    "name": "Verificar invitaci\u00f3n (p\u00fablica) User3",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -840,7 +840,7 @@
                     ]
                 },
                 {
-                    "name": "User1: Aceptar invitación (invitation.token)",
+                    "name": "User1: Aceptar invitaci\u00f3n (invitation.token)",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -1127,7 +1127,7 @@
                     ]
                 },
                 {
-                    "name": "User2: Aceptar invitación (invitation.token)",
+                    "name": "User2: Aceptar invitaci\u00f3n (invitation.token)",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -1414,7 +1414,7 @@
                     ]
                 },
                 {
-                    "name": "User3: Aceptar invitación (invitation.token)",
+                    "name": "User3: Aceptar invitaci\u00f3n (invitation.token)",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -2115,7 +2115,7 @@
             "name": "05 Pagos (aprobado y rechazado)",
             "item": [
                 {
-                    "name": "Pago1: User2 ➜ User1 (GA)",
+                    "name": "Pago1: User2 \u279c User1 (GA)",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -2238,7 +2238,7 @@
                     ]
                 },
                 {
-                    "name": "Pago2: User3 ➜ Owner (GB)",
+                    "name": "Pago2: User3 \u279c Owner (GB)",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -2448,7 +2448,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"title\": \"{{recurring_title}}\",\n  \"description\": \"{{recurring_description}}\",\n  \"amount_monthly\": {{recurring_amount_monthly}},\n  \"months\": {{recurring_months}},\n  \"start_date\": \"{{recurring_start_date}}\",\n  \"day_of_month\": {{recurring_day_of_month}},\n  \"reminder_days_before\": {{recurring_reminder_days_before}},\n  \"shared_with\": [\n    \"{{user2_id}}\",\n    \"{{user3_id}}\"\n  ]\n}"
+                            "raw": "{\n  \"title\": \"{{recurring_title}}\",\n  \"description\": \"{{recurring_description}}\",\n  \"amount_monthly\": {{recurring_amount_monthly}},\n  \"months\": {{recurring_months}},\n  \"start_date\": \"{{recurring_start_date}}\",\n  \"day_of_month\": {{recurring_day_of_month}},\n  \"reminder_days_before\": {{recurring_reminder_days_before}}\n}"
                         },
                         "auth": {
                             "type": "noauth"
@@ -2510,7 +2510,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"title\": \"{{recurring_title}}\",\n  \"description\": \"{{recurring_description}}\",\n  \"amount_monthly\": {{recurring_amount_monthly}},\n  \"months\": {{recurring_months}},\n  \"start_date\": \"{{recurring_start_date}}\",\n  \"day_of_month\": {{recurring_day_of_month}},\n  \"reminder_days_before\": {{recurring_reminder_days_before}},\n  \"shared_with\": [\n    \"{{user1_id}}\"\n  ]\n}"
+                            "raw": "{\n  \"title\": \"{{recurring_title}}\",\n  \"description\": \"{{recurring_description}}\",\n  \"amount_monthly\": {{recurring_amount_monthly}},\n  \"months\": {{recurring_months}},\n  \"start_date\": \"{{recurring_start_date}}\",\n  \"day_of_month\": {{recurring_day_of_month}},\n  \"reminder_days_before\": {{recurring_reminder_days_before}}\n}"
                         },
                         "auth": {
                             "type": "noauth"
@@ -2572,7 +2572,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"title\": \"{{recurring_title}}\",\n  \"description\": \"{{recurring_description}}\",\n  \"amount_monthly\": {{recurring_amount_monthly}},\n  \"months\": {{recurring_months}},\n  \"start_date\": \"{{recurring_start_date}}\",\n  \"day_of_month\": {{recurring_day_of_month}},\n  \"reminder_days_before\": {{recurring_reminder_days_before}},\n  \"shared_with\": [\n    \"{{user1_id}}\",\n    \"{{user2_id}}\"\n  ]\n}"
+                            "raw": "{\n  \"title\": \"{{recurring_title}}\",\n  \"description\": \"{{recurring_description}}\",\n  \"amount_monthly\": {{recurring_amount_monthly}},\n  \"months\": {{recurring_months}},\n  \"start_date\": \"{{recurring_start_date}}\",\n  \"day_of_month\": {{recurring_day_of_month}},\n  \"reminder_days_before\": {{recurring_reminder_days_before}}\n}"
                         },
                         "auth": {
                             "type": "noauth"
@@ -2863,7 +2863,7 @@
             "name": "09 Cambios/Logout/Eliminar",
             "item": [
                 {
-                    "name": "User1: cambiar contraseña",
+                    "name": "User1: cambiar contrase\u00f1a",
                     "request": {
                         "method": "PUT",
                         "header": [
@@ -3049,7 +3049,7 @@
                     ]
                 },
                 {
-                    "name": "User2: actualizar teléfono",
+                    "name": "User2: actualizar tel\u00e9fono",
                     "request": {
                         "method": "PUT",
                         "header": [

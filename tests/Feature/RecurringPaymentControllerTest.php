@@ -11,18 +11,12 @@ class RecurringPaymentControllerTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_user_can_create_and_share_recurring_payment(): void
+    public function test_user_can_create_recurring_payment(): void
     {
         $owner = User::create([
             'id' => (string) Str::uuid(),
             'name' => 'Owner',
             'email' => 'owner@example.com',
-        ]);
-
-        $viewer = User::create([
-            'id' => (string) Str::uuid(),
-            'name' => 'Viewer',
-            'email' => 'viewer@example.com',
         ]);
 
         $this->actingAs($owner, 'sanctum');
@@ -35,7 +29,6 @@ class RecurringPaymentControllerTest extends TestCase
             'start_date' => '2025-01-01',
             'day_of_month' => 1,
             'reminder_days_before' => 3,
-            'shared_with' => [$viewer->id],
         ];
 
         $resp = $this->postJson('/api/recurring-payments', $payload);
@@ -44,10 +37,5 @@ class RecurringPaymentControllerTest extends TestCase
         // Owner can list it
         $listOwner = $this->getJson('/api/recurring-payments');
         $listOwner->assertStatus(200)->assertJsonFragment(['description' => 'Pago tarjeta']);
-
-        // Viewer can also list it
-        $this->actingAs($viewer, 'sanctum');
-        $listViewer = $this->getJson('/api/recurring-payments');
-        $listViewer->assertStatus(200)->assertJsonFragment(['description' => 'Pago tarjeta']);
     }
 }
