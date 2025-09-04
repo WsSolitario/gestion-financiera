@@ -14,6 +14,9 @@ class RecurringPaymentController extends Controller
     {
         $userId = $request->user()->id;
 
+        $items = DB::table('recurring_payments as rp')
+            ->where('rp.user_id', $userId)
+            ->select('rp.*')
         $items = DB::table('recurring_payments')
             ->where('user_id', $userId)
             ->get();
@@ -39,17 +42,17 @@ class RecurringPaymentController extends Controller
 
         DB::transaction(function () use ($data, $id, $userId) {
             DB::table('recurring_payments')->insert([
-                'id'             => $id,
-                'user_id'             => $userId,
-                'title'               => $data['title'],
-                'description'         => $data['description'],
-                'amount_monthly'      => $data['amount_monthly'],
-                'months'              => $data['months'],
-                'start_date'          => $data['start_date'],
-                'day_of_month'        => $data['day_of_month'],
+                'id'                => $id,
+                'user_id'           => $userId,
+                'title'             => $data['title'],
+                'description'       => $data['description'],
+                'amount_monthly'    => $data['amount_monthly'],
+                'months'            => $data['months'],
+                'start_date'        => $data['start_date'],
+                'day_of_month'      => $data['day_of_month'],
                 'reminder_days_before'=> $data['reminder_days_before'],
-                'created_at'          => now(),
-                'updated_at'          => now(),
+                'created_at'        => now(),
+                'updated_at'        => now(),
             ]);
 
         });

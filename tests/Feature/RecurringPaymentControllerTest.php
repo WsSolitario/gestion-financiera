@@ -37,6 +37,7 @@ class RecurringPaymentControllerTest extends TestCase
 
         $listOwner = $this->getJson('/api/recurring-payments');
         $listOwner->assertStatus(200)->assertJsonFragment(['description' => 'Pago tarjeta']);
+
     }
 
     public function test_other_users_cannot_access_recurring_payments(): void
