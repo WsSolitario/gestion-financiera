@@ -20,6 +20,7 @@ class Group extends Model
         'description',
         'owner_id',
         'created_at',
+        'profile_picture_url',
     ];
 
     public function owner()

@@ -37,6 +37,7 @@ class GroupController extends Controller
                  g.name,
                  g.description,
                  g.owner_id,
+                 g.profile_picture_url,
                  g.created_at,
                  COALESCE(gm.role::text, CASE WHEN g.owner_id = ? THEN 'owner' END) AS my_role,
                  (SELECT COUNT(*) FROM group_members m WHERE m.group_id = g.id) AS members_count",
@@ -51,6 +52,7 @@ class GroupController extends Controller
                     'description'   => $g->description,
                     'owner_id'      => $g->owner_id,
                     'created_at'    => $g->created_at,
+                    'profile_picture_url' => $g->profile_picture_url ?? $this->defaultProfilePictureUrl($g->name),
                     'my_role'       => $g->my_role ?? 'member',
                     'members_count' => (int) $g->members_count,
                 ];
@@ -77,6 +79,7 @@ class GroupController extends Controller
                 'id'          => $groupId,
                 'name'        => $data['name'],
                 'description' => $data['description'] ?? null,
+                'profile_picture_url' => $data['profile_picture_url'] ?? null,
                 'owner_id'    => $userId,
                 // created_at: lo define la BD si tienes default; si no, usa now()
             ]);
@@ -382,6 +385,13 @@ class GroupController extends Controller
             'description' => $g->description,
             'owner_id'    => $g->owner_id,
             'created_at'  => $g->created_at ?? null,
+            'profile_picture_url' => $g->profile_picture_url ?? $this->defaultProfilePictureUrl($g->name),
         ];
+    }
+
+    private function defaultProfilePictureUrl(string $name): string
+    {
+        $seed = urlencode($name);
+        return "https://api.dicebear.com/7.x/initials/svg?seed={$seed}";
     }
 }

@@ -24,6 +24,7 @@ class StoreGroupRequest extends FormRequest
         return [
             'name'        => ['required', 'string', 'max:150'],
             'description' => ['sometimes', 'nullable', 'string'],
+            'profile_picture_url' => ['sometimes', 'nullable', 'url'],
         ];
     }
 }

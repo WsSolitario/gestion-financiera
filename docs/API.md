@@ -50,7 +50,8 @@ POST /api/auth/login
 POST /api/groups
 {
   "name": "Viaje",
-  "description": "Gastos del viaje"
+  "description": "Gastos del viaje",
+  "profile_picture_url": "https://example.com/logo.png"
 }
 ```
 #### Respuesta
@@ -58,9 +59,12 @@ POST /api/groups
 {
   "id": "UUID",
   "name": "Viaje",
-  "description": "Gastos del viaje"
+  "description": "Gastos del viaje",
+  "profile_picture_url": "https://example.com/logo.png"
 }
 ```
+
+Si no se envía `profile_picture_url`, la API genera automáticamente un avatar por defecto basado en el nombre del grupo mediante DiceBear.
 
 ### Invitaciones - Crear invitación
 #### Solicitud
