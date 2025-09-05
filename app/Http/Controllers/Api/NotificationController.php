@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Illuminate\Database\QueryException;
+use App\Http\Requests\Notification\RegisterDeviceRequest;
 
 class NotificationController extends Controller
 {
@@ -23,14 +22,11 @@ class NotificationController extends Controller
      *  - Si el token existe para el MISMO usuario => actualiza device_type si cambió (200).
      *  - Si el token existe para OTRO usuario => lo reasigna al usuario actual (200).
      */
-    public function registerDevice(Request $request): JsonResponse
+    public function registerDevice(RegisterDeviceRequest $request): JsonResponse
     {
         $user = $request->user();
 
-        $data = $request->validate([
-            'device_token' => ['required', 'string', 'max:4096'],
-            'device_type'  => ['required', Rule::in(['android', 'ios', 'web'])],
-        ]);
+        $data = $request->validated();
 
         $token = $data['device_token'];
         $type  = $data['device_type'];

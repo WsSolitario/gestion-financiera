@@ -11,7 +11,7 @@ class StoreInvitationRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,9 @@ class StoreInvitationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'invitee_email'   => ['required', 'email', 'max:255'],
+            'group_id'        => ['required', 'uuid'],
+            'expires_in_days' => ['sometimes', 'integer', 'min:1', 'max:90'],
         ];
     }
 }
