@@ -13,12 +13,9 @@ class RecurringPaymentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $userId = $request->user()->id;
-
         $items = DB::table('recurring_payments as rp')
             ->where('rp.user_id', $userId)
             ->select('rp.*')
-        $items = DB::table('recurring_payments')
-            ->where('user_id', $userId)
             ->get();
 
         return response()->json($items, 200);
