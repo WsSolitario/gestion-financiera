@@ -149,11 +149,23 @@ POST /api/notifications/register-device
 }
 ```
 #### Respuesta
+- **201** cuando se inserta un nuevo token.
 ```json
 {
-  "message": "Dispositivo registrado"
+  "message": "Dispositivo registrado",
+  "device": {
+    "id": "UUID",
+    "user_id": "UUID",
+    "device_token": "token-ejemplo",
+    "device_type": "web"
+  },
+  "stats": {
+    "total_devices_for_user": 1
+  }
 }
 ```
+
+- **200** cuando el token ya existía. El mensaje puede ser `Dispositivo actualizado` o `Dispositivo ya estaba registrado`.
 
 ## Flujo de registro e invitaciones
 
@@ -449,6 +461,12 @@ Registra o actualiza un dispositivo para recibir notificaciones.
 **Body**
 - `device_token` (string, requerido)
 - `device_type` (`android`|`ios`|`web`, requerido)
+
+**Respuesta**
+- `message`: "Dispositivo registrado" (201) o "Dispositivo actualizado"/"Dispositivo ya estaba registrado" (200).
+- `device` (objeto): contiene `id`, `user_id`, `device_token` y `device_type`.
+- `stats` (objeto): incluye `total_devices_for_user` (número de dispositivos del usuario).
+- Una nueva inserción responde **201** y una actualización **200**.
 
 ## Dashboard
 
