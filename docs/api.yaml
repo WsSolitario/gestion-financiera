@@ -787,6 +787,77 @@ paths:
       responses:
         '200':
           description: Pago rechazado
+
+  /recurring-payments:
+    get:
+      summary: Lista pagos recurrentes creados por el usuario
+      responses:
+        '200':
+          description: Lista de pagos recurrentes
+          content:
+            application/json:
+              examples:
+                success:
+                  value:
+                    - id: 11111111-2222-3333-4444-555555555555
+                      title: Suscripción gimnasio
+                      description: Pago mensual gimnasio
+                      amount_monthly: 50
+                      months: 12
+                      start_date: '2024-01-01'
+                      day_of_month: 5
+                      reminder_days_before: 3
+    post:
+      summary: Crea un nuevo pago recurrente para recordar deudas periódicas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, description, amount_monthly, months, start_date, day_of_month, reminder_days_before]
+              properties:
+                title:
+                  type: string
+                description:
+                  type: string
+                amount_monthly:
+                  type: number
+                months:
+                  type: integer
+                start_date:
+                  type: string
+                  format: date
+                day_of_month:
+                  type: integer
+                reminder_days_before:
+                  type: integer
+            examples:
+              create:
+                value:
+                  title: Suscripción gimnasio
+                  description: Pago mensual gimnasio
+                  amount_monthly: 50
+                  months: 12
+                  start_date: '2024-01-01'
+                  day_of_month: 5
+                  reminder_days_before: 3
+      responses:
+        '201':
+          description: Pago recurrente creado
+          content:
+            application/json:
+              examples:
+                success:
+                  value:
+                    id: 11111111-2222-3333-4444-555555555555
+                    title: Suscripción gimnasio
+                    description: Pago mensual gimnasio
+                    amount_monthly: 50
+                    months: 12
+                    start_date: '2024-01-01'
+                    day_of_month: 5
+                    reminder_days_before: 3
   /notifications/register-device:
     post:
       summary: Registra o actualiza un dispositivo para recibir notificaciones
