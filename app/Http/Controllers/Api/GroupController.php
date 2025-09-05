@@ -115,11 +115,28 @@ class GroupController extends Controller
         $members = DB::table('group_members as gm')
             ->join('users as u', 'u.id', '=', 'gm.user_id')
             ->where('gm.group_id', $groupId)
-            ->select('u.id as user_id', 'u.name', 'u.email', 'gm.role', 'gm.joined_at')
+            ->select(
+                'u.id as user_id',
+                'u.name',
+                'u.email',
+                'u.profile_picture_url',
+                'gm.role',
+                'gm.joined_at'
+            )
             // Comparar sobre texto para evitar choques enum/text
             ->orderByRaw("CASE gm.role::text WHEN 'owner' THEN 0 WHEN 'admin' THEN 1 ELSE 2 END")
             ->orderBy('u.name')
-            ->get();
+            ->get()
+            ->map(function ($m) {
+                return [
+                    'user_id'            => $m->user_id,
+                    'name'               => $m->name,
+                    'email'              => $m->email,
+                    'profile_picture_url'=> $m->profile_picture_url,
+                    'role'               => $m->role,
+                    'joined_at'          => $m->joined_at,
+                ];
+            });
 
         return response()->json([
             'group'   => $this->formatGroup($group),
