@@ -255,3 +255,7 @@ Laravel Sanctum salvo donde se indique.
 2. El pagador revisa y aprueba o rechaza el pago.
 3. Al aprobarse se marcan las deudas como pagadas; si se rechaza se liberan.
 
+
+## Licencia
+
+Este proyecto se distribuye bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE) para más información.
