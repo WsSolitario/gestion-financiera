@@ -3,31 +3,32 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Http\Requests\Report\ReportFilterRequest;
 
 class ReportController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(ReportFilterRequest $request): JsonResponse
     {
-        $userId        = $request->user()->id;
-        $groupId       = $request->query('groupId');
+        $userId  = $request->user()->id;
+        $data    = $request->validated();
+        $groupId = $data['groupId'] ?? null;
 
-        $start         = $request->query('startDate')
-            ? Carbon::parse($request->query('startDate'))->startOfDay()
+        $start = isset($data['startDate'])
+            ? Carbon::parse($data['startDate'])->startOfDay()
             : now()->subDays(30)->startOfDay();
 
-        $end           = $request->query('endDate')
-            ? Carbon::parse($request->query('endDate'))->endOfDay()
+        $end   = isset($data['endDate'])
+            ? Carbon::parse($data['endDate'])->endOfDay()
             : now()->endOfDay();
 
-        $granularity   = $request->query('granularity', 'auto'); // day|month|auto
+        $granularity   = $data['granularity'] ?? 'auto'; // day|month|auto
         $grain         = $this->resolveGrain($granularity, $start, $end); // 'day' o 'month'
         $periodFormat  = $grain === 'day' ? 'YYYY-MM-DD' : 'YYYY-MM';
 
-        $paymentStatus = $request->query('paymentStatus', 'approved'); // approved|pending|rejected|any
+        $paymentStatus = $data['paymentStatus'] ?? 'approved'; // approved|pending|rejected|any
 
         // ============================
         // TOTALES (GASTOS)

@@ -11,7 +11,7 @@ class ReportFilterRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,11 @@ class ReportFilterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'groupId'      => ['sometimes', 'uuid'],
+            'startDate'    => ['sometimes', 'date_format:Y-m-d'],
+            'endDate'      => ['sometimes', 'date_format:Y-m-d'],
+            'granularity'  => ['sometimes', 'in:day,month,auto'],
+            'paymentStatus'=> ['sometimes', 'in:approved,pending,rejected,any'],
         ];
     }
 }

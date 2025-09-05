@@ -11,7 +11,7 @@ class RegisterDeviceRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,8 @@ class RegisterDeviceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'device_token' => ['required', 'string', 'max:4096'],
+            'device_type'  => ['required', 'in:android,ios,web'],
         ];
     }
 }

@@ -11,6 +11,8 @@ use Carbon\Carbon;
 use App\Models\Payment;
 use App\Jobs\SendPushNotification;
 use Illuminate\Validation\Rule;
+use App\Http\Requests\Payment\StorePaymentRequest;
+use App\Http\Requests\Payment\ApprovePaymentRequest;
 
 class PaymentController extends Controller
 {
@@ -64,19 +66,11 @@ class PaymentController extends Controller
         ], 200);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StorePaymentRequest $request): JsonResponse
     {
         $userId = $request->user()->id;
 
-        $data = $request->validate([
-            'group_id'     => ['required', 'uuid'],
-            'from_user_id' => ['required', 'uuid'],
-            'to_user_id'   => ['required', 'uuid', 'different:from_user_id'],
-            'amount'       => ['required', 'numeric', 'gt:0'],
-            'note'         => ['sometimes', 'nullable', 'string'],
-            'evidence_url' => ['sometimes', 'nullable', 'url'],
-            'payment_method' => ['sometimes', 'nullable', 'string', Rule::in(['cash', 'transfer'])],
-        ]);
+        $data = $request->validated();
 
         if ($data['from_user_id'] !== $userId) {
             return response()->json(['message' => 'No puedes crear pagos a nombre de otro usuario'], 403);
@@ -198,7 +192,7 @@ class PaymentController extends Controller
         ], 200);
     }
 
-    public function approve(string $paymentId, Request $request): JsonResponse
+    public function approve(string $paymentId, ApprovePaymentRequest $request): JsonResponse
     {
         $userId = $request->user()->id;
 

@@ -11,7 +11,7 @@ class UpdateGroupRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,8 @@ class UpdateGroupRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'name'        => ['sometimes', 'string', 'max:150'],
+            'description' => ['sometimes', 'nullable', 'string'],
         ];
     }
 }
