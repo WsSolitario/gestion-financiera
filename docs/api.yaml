@@ -216,11 +216,16 @@ paths:
                   type: string
                 description:
                   type: string
+                profile_picture_url:
+                  type: string
+                  format: uri
+                  description: URL de la imagen de perfil del grupo. Si se omite, se genera un avatar por defecto.
             examples:
               create:
                 value:
                   name: Viaje a Madrid
                   description: Gastos del viaje de mayo
+                  profile_picture_url: https://example.com/logo.png
       responses:
         '201':
           description: Grupo creado
@@ -232,6 +237,7 @@ paths:
                     id: 11111111-2222-3333-4444-555555555555
                     name: Viaje a Madrid
                     description: Gastos del viaje de mayo
+                    profile_picture_url: https://example.com/logo.png
   /groups/{group}:
     parameters:
       - in: path
@@ -258,9 +264,13 @@ paths:
                   type: string
                 description:
                   type: string
+                profile_picture_url:
+                  type: string
+                  format: uri
             example:
               name: Nuevo nombre
               description: Descripción actualizada
+              profile_picture_url: https://example.com/nuevo.png
       responses:
         '200':
           description: Grupo actualizado

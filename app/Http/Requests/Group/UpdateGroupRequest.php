@@ -24,6 +24,7 @@ class UpdateGroupRequest extends FormRequest
         return [
             'name'        => ['sometimes', 'string', 'max:150'],
             'description' => ['sometimes', 'nullable', 'string'],
+            'profile_picture_url' => ['sometimes', 'nullable', 'url'],
         ];
     }
 }
