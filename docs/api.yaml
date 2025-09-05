@@ -21,7 +21,7 @@ paths:
   /app-mode:
     get:
       summary: Obtiene el modo actual de la aplicación
-      description: Devuelve `public` o `private`
+      description: Devuelve `public` o `private` en la clave `mode`
       security: []
       responses:
         '200':

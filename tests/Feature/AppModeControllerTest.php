@@ -13,7 +13,7 @@ class AppModeControllerTest extends TestCase
         $response = $this->getJson('/api/app-mode');
 
         $response->assertStatus(200)
-            ->assertExactJson(['mode_app' => 'private']);
+            ->assertExactJson(['mode' => 'private']);
     }
 
     public function test_show_returns_public_mode(): void
@@ -23,7 +23,7 @@ class AppModeControllerTest extends TestCase
         $response = $this->getJson('/api/app-mode');
 
         $response->assertStatus(200)
-            ->assertExactJson(['mode_app' => 'public']);
+            ->assertExactJson(['mode' => 'public']);
     }
 }
 
