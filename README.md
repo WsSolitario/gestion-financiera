@@ -56,6 +56,13 @@ Ejecutar con:
 docker compose up -d db
 ```
 
+### Build del front-end con Docker
+
+El `Dockerfile` usa una etapa de construcción basada en `node:20` para compilar los activos
+front‑end con Vite. De esta forma se fija la versión de Node utilizada y se evita instalar
+Node en la imagen final. Al actualizar los archivos de `resources` es necesario volver a
+construir la imagen para regenerar `public/build`.
+
 ## Configuración del `.env`
 
 Variables principales:
