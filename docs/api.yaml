@@ -15,6 +15,42 @@ components:
       type: http
       scheme: bearer
       bearerFormat: Bearer
+  schemas:
+    Invitation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        group_id:
+          type: string
+          format: uuid
+        group_name:
+          type: string
+          nullable: true
+        inviter_id:
+          type: string
+          format: uuid
+        invitee_email:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [pending, accepted, expired]
+        expires_at:
+          type: string
+          format: date-time
+        token:
+          type: string
+          description: Solo al crear la invitación
+    RegistrationToken:
+      type: object
+      properties:
+        token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
 security:
   - sanctum: []
 paths:
@@ -390,6 +426,12 @@ paths:
       responses:
         '200':
           description: Lista de invitaciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invitation'
     post:
       summary: Crea una invitación para un grupo (owner/admin)
       requestBody:
@@ -419,10 +461,32 @@ paths:
           description: Invitación creada
           content:
             application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  invitation:
+                    $ref: '#/components/schemas/Invitation'
+                  registration_token:
+                    $ref: '#/components/schemas/RegistrationToken'
+                    nullable: true
               examples:
                 success:
                   value:
-                    token: INVITE-TOKEN
+                    message: Invitación creada
+                    invitation:
+                      id: 11111111-2222-3333-4444-555555555555
+                      group_id: 11111111-2222-3333-4444-555555555555
+                      group_name: Viaje
+                      inviter_id: 22222222-3333-4444-5555-666666666666
+                      invitee_email: amigo@example.com
+                      status: pending
+                      expires_at: '2024-01-01T00:00:00.000000Z'
+                      token: INVITE-TOKEN
+                    registration_token:
+                      token: REG-TOKEN
+                      expires_at: '2024-01-01T00:00:00.000000Z'
   /invitations/{id}:
     parameters:
       - in: path
@@ -436,6 +500,10 @@ paths:
       responses:
         '200':
           description: Detalle de la invitación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invitation'
     delete:
       summary: Marca la invitación como expirada
       responses:

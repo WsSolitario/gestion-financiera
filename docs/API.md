@@ -78,9 +78,37 @@ POST /api/invitations
 #### Respuesta
 ```json
 {
-  "token": "INVITE-TOKEN"
+  "message": "Invitación creada",
+  "invitation": {
+    "id": "UUID",
+    "group_id": "UUID",
+    "group_name": "Viaje",
+    "inviter_id": "UUID",
+    "invitee_email": "amigo@example.com",
+    "status": "pending",
+    "expires_at": "2024-01-01T00:00:00.000000Z",
+    "token": "INVITE-TOKEN"
+  },
+  "registration_token": {
+    "token": "REG-TOKEN",
+    "expires_at": "2024-01-01T00:00:00.000000Z"
+  }
 }
 ```
+
+* `message`: descripción del resultado.
+* `invitation`:
+  * `id` (uuid)
+  * `group_id` (uuid)
+  * `group_name` (string, opcional)
+  * `inviter_id` (uuid)
+  * `invitee_email` (string)
+  * `status` (`pending`|`accepted`|`expired`)
+  * `expires_at` (fecha ISO 8601)
+  * `token` (string, solo al crear)
+* `registration_token` (presente solo si el invitado no está registrado y el modo es `private`):
+  * `token` (string)
+  * `expires_at` (fecha ISO 8601)
 
 ### Invitaciones - Aceptar invitación
 #### Solicitud
@@ -93,7 +121,7 @@ POST /api/invitations/accept
 #### Respuesta
 ```json
 {
-  "message": "Unido al grupo"
+  "message": "Invitación aceptada"
 }
 ```
 
