@@ -877,14 +877,97 @@ paths:
                   device_token: TOKEN123
                   device_type: android
       responses:
-        '200':
+        '201':
           description: Dispositivo registrado
           content:
             application/json:
+              schema:
+                type: object
+                required: [message, device, stats]
+                properties:
+                  message:
+                    type: string
+                  device:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      user_id:
+                        type: string
+                        format: uuid
+                      device_token:
+                        type: string
+                      device_type:
+                        type: string
+                        enum: [android, ios, web]
+                  stats:
+                    type: object
+                    properties:
+                      total_devices_for_user:
+                        type: integer
               examples:
-                success:
+                created:
                   value:
                     message: Dispositivo registrado
+                    device:
+                      id: 11111111-2222-3333-4444-555555555555
+                      user_id: 99999999-aaaa-bbbb-cccc-dddddddddddd
+                      device_token: TOKEN123
+                      device_type: android
+                    stats:
+                      total_devices_for_user: 1
+        '200':
+          description: Dispositivo actualizado o ya estaba registrado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [message, device, stats]
+                properties:
+                  message:
+                    type: string
+                    enum: [Dispositivo actualizado, Dispositivo ya estaba registrado]
+                  device:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      user_id:
+                        type: string
+                        format: uuid
+                      device_token:
+                        type: string
+                      device_type:
+                        type: string
+                        enum: [android, ios, web]
+                  stats:
+                    type: object
+                    properties:
+                      total_devices_for_user:
+                        type: integer
+              examples:
+                updated:
+                  value:
+                    message: Dispositivo actualizado
+                    device:
+                      id: 11111111-2222-3333-4444-555555555555
+                      user_id: 99999999-aaaa-bbbb-cccc-dddddddddddd
+                      device_token: TOKEN123
+                      device_type: android
+                    stats:
+                      total_devices_for_user: 1
+                alreadyRegistered:
+                  value:
+                    message: Dispositivo ya estaba registrado
+                    device:
+                      id: 11111111-2222-3333-4444-555555555555
+                      user_id: 99999999-aaaa-bbbb-cccc-dddddddddddd
+                      device_token: TOKEN123
+                      device_type: android
+                    stats:
+                      total_devices_for_user: 1
   /dashboard/summary:
     get:
       summary: Resumen de deudas, pagos y actividad reciente
