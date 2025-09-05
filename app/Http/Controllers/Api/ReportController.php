@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Support\MoneyFormatter;
 
 class ReportController extends Controller
 {
@@ -106,7 +107,7 @@ class ReportController extends Controller
             ->groupByRaw("date_trunc('$grain', e.expense_date::timestamp)")
             ->orderByRaw("date_trunc('$grain', e.expense_date::timestamp)")
             ->get()
-            ->map(fn($r) => ['period' => $r->period, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['period' => $r->period, 'total' => MoneyFormatter::format($r->total)]);
 
         // 2) Tu parte en gastos
         $seriesYourShare = DB::table('expense_participants as ep')
@@ -118,7 +119,7 @@ class ReportController extends Controller
             ->groupByRaw("date_trunc('$grain', e.expense_date::timestamp)")
             ->orderByRaw("date_trunc('$grain', e.expense_date::timestamp)")
             ->get()
-            ->map(fn($r) => ['period' => $r->period, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['period' => $r->period, 'total' => MoneyFormatter::format($r->total)]);
 
         // 3) Pagos entrantes
         $seriesIncoming = DB::table('payments as p')
@@ -138,7 +139,7 @@ class ReportController extends Controller
             ->groupByRaw("date_trunc('$grain', p.payment_date)")
             ->orderByRaw("date_trunc('$grain', p.payment_date)")
             ->get()
-            ->map(fn($r) => ['period' => $r->period, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['period' => $r->period, 'total' => MoneyFormatter::format($r->total)]);
 
         // 4) Pagos salientes
         $seriesOutgoing = DB::table('payments as p')
@@ -158,7 +159,7 @@ class ReportController extends Controller
             ->groupByRaw("date_trunc('$grain', p.payment_date)")
             ->orderByRaw("date_trunc('$grain', p.payment_date)")
             ->get()
-            ->map(fn($r) => ['period' => $r->period, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['period' => $r->period, 'total' => MoneyFormatter::format($r->total)]);
 
         // ============================
         // DESGLOSES
@@ -174,7 +175,7 @@ class ReportController extends Controller
             ->groupBy('g.id', 'g.name')
             ->orderByDesc(DB::raw('SUM(e.total_amount)'))
             ->get()
-            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => MoneyFormatter::format($r->total)]);
 
         // Por grupo: tu parte en gastos
         $byGroupYourShare = DB::table('expense_participants as ep')
@@ -187,7 +188,7 @@ class ReportController extends Controller
             ->groupBy('g.id', 'g.name')
             ->orderByDesc(DB::raw('SUM(ep.amount_due)'))
             ->get()
-            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => MoneyFormatter::format($r->total)]);
 
         // Por grupo: pagos salientes (se distribuye por grupos usando los EPs asociados)
         $byGroupOutgoing = DB::table('payments as p')
@@ -203,7 +204,7 @@ class ReportController extends Controller
             ->groupBy('g.id', 'g.name')
             ->orderByDesc(DB::raw('SUM(ep.amount_due)'))
             ->get()
-            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => MoneyFormatter::format($r->total)]);
 
         // Por grupo: pagos entrantes (idem, usando EPs)
         $byGroupIncoming = DB::table('payments as p')
@@ -219,7 +220,7 @@ class ReportController extends Controller
             ->groupBy('g.id', 'g.name')
             ->orderByDesc(DB::raw('SUM(ep.amount_due)'))
             ->get()
-            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => MoneyFormatter::format($r->total)]);
 
         // Desglose por contraparte (TOP 5)
         $topOutgoingByCounterparty = DB::table('payments as p')
@@ -233,7 +234,7 @@ class ReportController extends Controller
             ->orderByDesc(DB::raw('SUM(p.amount)'))
             ->limit(5)
             ->get()
-            ->map(fn($r) => ['user_id' => $r->user_id, 'name' => $r->name, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['user_id' => $r->user_id, 'name' => $r->name, 'total' => MoneyFormatter::format($r->total)]);
 
         $topIncomingByCounterparty = DB::table('payments as p')
             ->join('users as u', 'u.id', '=', 'p.from_user_id')
@@ -246,7 +247,7 @@ class ReportController extends Controller
             ->orderByDesc(DB::raw('SUM(p.amount)'))
             ->limit(5)
             ->get()
-            ->map(fn($r) => ['user_id' => $r->user_id, 'name' => $r->name, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['user_id' => $r->user_id, 'name' => $r->name, 'total' => MoneyFormatter::format($r->total)]);
 
         // ============================
         // RESPUESTA
@@ -262,14 +263,14 @@ class ReportController extends Controller
             ],
             'totals' => [
                 'expenses' => [
-                    'paid_by_you' => $this->money($totalExpensesPaidByYou),
-                    'your_share'  => $this->money($totalYourShare),
-                    'owed_to_you' => $this->money($totalOwedToYou),
+                    'paid_by_you' => MoneyFormatter::format($totalExpensesPaidByYou),
+                    'your_share'  => MoneyFormatter::format($totalYourShare),
+                    'owed_to_you' => MoneyFormatter::format($totalOwedToYou),
                 ],
                 'payments' => [
-                    'incoming'    => $this->money($totalIncoming),
-                    'outgoing'    => $this->money($totalOutgoing),
-                    'net'         => $this->money($totalIncoming - $totalOutgoing),
+                    'incoming'    => MoneyFormatter::format($totalIncoming),
+                    'outgoing'    => MoneyFormatter::format($totalOutgoing),
+                    'net'         => MoneyFormatter::format($totalIncoming - $totalOutgoing),
                 ],
             ],
             'timeseries' => [
@@ -306,8 +307,4 @@ class ReportController extends Controller
         return $start->diffInDays($end) <= 45 ? 'day' : 'month';
     }
 
-    private function money($value): string
-    {
-        return number_format((float) ($value ?? 0), 2, '.', '');
-    }
 }

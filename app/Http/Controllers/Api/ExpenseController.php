@@ -12,6 +12,8 @@ use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Jobs\ProcessExpenseOcr;
 
+use App\Support\MoneyFormatter;
+
 use App\Models\Expense;
 use App\Models\ExpenseParticipant;
 use App\Models\Group;
@@ -65,7 +67,7 @@ class ExpenseController extends Controller
                     'user_id'    => $p->user_id,
                     'user_name'  => $p->user_name,
                     'user_email' => $p->user_email,
-                    'amount_due' => $this->money($p->amount_due),
+                    'amount_due' => MoneyFormatter::format($p->amount_due),
                     'is_paid'    => (bool) $p->is_paid,
                     'payment_id' => $p->payment_id,
                 ];
@@ -74,7 +76,7 @@ class ExpenseController extends Controller
             return [
                 'id'               => $e->id,
                 'description'      => $e->description,
-                'total_amount'     => $this->money($e->total_amount),
+                'total_amount'     => MoneyFormatter::format($e->total_amount),
                 'payer_id'         => $e->payer_id,
                 'group_id'         => $e->group_id,
                 'ticket_image_url' => $e->ticket_image_url,
@@ -131,7 +133,7 @@ class ExpenseController extends Controller
 
         // Validar suma de participantes = total_amount
         $sum = collect($data['participants'])->sum(fn($p) => (float)$p['amount_due']);
-        if ($this->money($sum) !== $this->money($data['total_amount'])) {
+        if (MoneyFormatter::format($sum) !== MoneyFormatter::format($data['total_amount'])) {
             throw ValidationException::withMessages([
                 'participants' => ['La suma de amount_due no coincide con total_amount.'],
             ]);
@@ -213,7 +215,7 @@ class ExpenseController extends Controller
                     'user_id'    => $p->user_id,
                     'user_name'  => $p->user_name,
                     'user_email' => $p->user_email,
-                    'amount_due' => $this->money($p->amount_due),
+                    'amount_due' => MoneyFormatter::format($p->amount_due),
                     'is_paid'    => (bool) $p->is_paid,
                     'payment_id' => $p->payment_id,
                 ];
@@ -270,7 +272,7 @@ class ExpenseController extends Controller
             // Si actualizas participants pero NO mandas total_amount, usa el total actual
             $newTotal = $data['total_amount'] ?? (float) $expense->total_amount;
             $sum = collect($data['participants'])->sum(fn($p) => (float)$p['amount_due']);
-            if ($this->money($sum) !== $this->money($newTotal)) {
+            if (MoneyFormatter::format($sum) !== MoneyFormatter::format($newTotal)) {
                 throw ValidationException::withMessages([
                     'participants' => ['La suma de amount_due no coincide con total_amount.'],
                 ]);
@@ -465,7 +467,7 @@ class ExpenseController extends Controller
         return [
             'id'               => $e->id,
             'description'      => $e->description,
-            'total_amount'     => $this->money($e->total_amount),
+            'total_amount'     => MoneyFormatter::format($e->total_amount),
             'payer_id'         => $e->payer_id,
             'group_id'         => $e->group_id,
             'ticket_image_url' => $e->ticket_image_url,
@@ -477,8 +479,4 @@ class ExpenseController extends Controller
         ];
     }
 
-    private function money($value): string
-    {
-        return number_format((float) ($value ?? 0), 2, '.', '');
-    }
 }

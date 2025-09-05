@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use App\Models\Payment;
 use App\Jobs\SendPushNotification;
 use Illuminate\Validation\Rule;
+use App\Support\MoneyFormatter;
 
 class PaymentController extends Controller
 {
@@ -149,7 +150,7 @@ class PaymentController extends Controller
                     'user_id'      => $row->user_id,
                     'user_name'    => $row->user_name,
                     'user_email'   => $row->user_email,
-                    'amount_due'   => $this->money($row->amount_due),
+                    'amount_due'   => MoneyFormatter::format($row->amount_due),
                     'is_paid'      => (bool) $row->is_paid,
                     'expense_desc' => $row->description,
                     'expense_date' => $row->expense_date,
@@ -357,7 +358,7 @@ class PaymentController extends Controller
             ->map(fn($r) => [
                 'creditor_id'   => $r->creditor_id,
                 'creditor_name' => $r->creditor_name,
-                'total'         => $this->money($r->total),
+                'total'         => MoneyFormatter::format($r->total),
             ]);
 
         $byGroup = $base->clone()
@@ -369,7 +370,7 @@ class PaymentController extends Controller
             ->map(fn($r) => [
                 'group_id'   => $r->group_id,
                 'group_name' => $r->group_name,
-                'total'      => $this->money($r->total),
+                'total'      => MoneyFormatter::format($r->total),
             ]);
 
         $recent = $base->clone()
@@ -394,12 +395,12 @@ class PaymentController extends Controller
                 'expense_date'           => $row->expense_date,
                 'creditor_id'            => $row->payer_id,
                 'creditor_name'          => $row->creditor_name,
-                'amount_due'             => $this->money($row->amount_due),
+                'amount_due'             => MoneyFormatter::format($row->amount_due),
                 'linked_payment_id'      => $row->payment_id,
             ]);
 
         return response()->json([
-            'total_due'   => $this->money($totalGlobal),
+            'total_due'   => MoneyFormatter::format($totalGlobal),
             'by_creditor' => $byCreditor,
             'by_group'    => $byGroup,
             'recent'      => $recent,
@@ -414,7 +415,7 @@ class PaymentController extends Controller
         return [
             'id'            => $p->id,
             'group_id'      => $p->group_id,
-            'amount'        => $this->money($p->amount),
+            'amount'        => MoneyFormatter::format($p->amount),
             'status'        => $p->status,
             'payment_date'  => $p->payment_date,
             'payment_method' => $p->payment_method,
@@ -425,12 +426,8 @@ class PaymentController extends Controller
             'to_user_id'    => $p->to_user_id,
             'receiver_name' => $p->receiver_name ?? null,
             'direction'     => $direction,
-            'unapplied_amount' => $this->money($p->unapplied_amount ?? 0),
+            'unapplied_amount' => MoneyFormatter::format($p->unapplied_amount ?? 0),
         ];
     }
 
-    private function money($value): string
-    {
-        return number_format((float) ($value ?? 0), 2, '.', '');
-    }
 }
