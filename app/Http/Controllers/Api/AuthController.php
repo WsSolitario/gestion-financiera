@@ -8,6 +8,8 @@ use App\Models\RegistrationToken;
 use App\Http\Resources\UserResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -24,26 +26,11 @@ class AuthController extends Controller
      * - En modo PUBLIC: registration_token opcional (ignorado si viene vacío)
      * Opcional: invitation_token para unirse a un grupo
      */
-    public function register(Request $request): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
         $isPublic = config('app.mode_app') === 'public';
 
-        // Primero definimos reglas base…
-        $rules = [
-            'name'                => ['required', 'string', 'max:100'],
-            'email'               => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password'            => ['required', 'string', 'min:8', 'confirmed'],
-            'invitation_token'    => ['sometimes', 'nullable', 'string'],
-            'profile_picture_url' => ['sometimes', 'nullable', 'url'],
-            'phone_number'        => ['sometimes', 'nullable', 'string', 'max:50'],
-        ];
-
-        // …y ajustamos la regla de registration_token según el modo.
-        $rules['registration_token'] = $isPublic
-            ? ['sometimes', 'nullable', 'string']
-            : ['required', 'string'];
-
-        $data = $request->validate($rules);
+        $data = $request->validated();
 
         /** @var Invitation|null $invitation */
         $invitation = null;
@@ -181,12 +168,9 @@ class AuthController extends Controller
      * POST /api/auth/login
      * Requiere: email, password
      */
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
-        $data = $request->validate([
-            'email'    => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+        $data = $request->validated();
 
         /** @var User|null $user */
         $user = User::whereRaw('LOWER(email) = ?', [mb_strtolower($data['email'])])->first();

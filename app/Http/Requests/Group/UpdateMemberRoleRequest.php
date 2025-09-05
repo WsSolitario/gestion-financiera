@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Group;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdateMemberRoleRequest extends FormRequest
 {
@@ -11,7 +12,7 @@ class UpdateMemberRoleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +23,7 @@ class UpdateMemberRoleRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'role' => ['required', Rule::in(['member', 'admin', 'owner'])],
         ];
     }
 }

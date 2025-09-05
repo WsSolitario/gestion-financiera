@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Payment;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StorePaymentRequest extends FormRequest
 {
@@ -11,7 +12,7 @@ class StorePaymentRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +23,13 @@ class StorePaymentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'group_id'     => ['required', 'uuid'],
+            'from_user_id' => ['required', 'uuid'],
+            'to_user_id'   => ['required', 'uuid', 'different:from_user_id'],
+            'amount'       => ['required', 'numeric', 'gt:0'],
+            'note'         => ['sometimes', 'nullable', 'string'],
+            'evidence_url' => ['sometimes', 'nullable', 'url'],
+            'payment_method' => ['sometimes', 'nullable', 'string', Rule::in(['cash', 'transfer'])],
         ];
     }
 }
