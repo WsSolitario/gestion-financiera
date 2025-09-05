@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Log;
 use App\Services\BrevoClient;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
+use App\Http\Requests\Invitation\StoreInvitationRequest;
+use App\Http\Requests\Invitation\AcceptInvitationRequest;
 
 class InvitationController extends Controller
 {
@@ -72,16 +74,12 @@ class InvitationController extends Controller
      * Body: { invitee_email, group_id, expires_in_days?=7 }
      * Requiere permiso owner/admin.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreInvitationRequest $request): JsonResponse
     {
         $userId  = $request->user()->id;
         $modeApp = config('app.mode_app');
 
-        $data = $request->validate([
-            'invitee_email'   => ['required', 'email', 'max:255'],
-            'group_id'        => ['required', 'uuid'],
-            'expires_in_days' => ['sometimes', 'integer', 'min:1', 'max:90'],
-        ]);
+        $data = $request->validated();
 
         if (!$this->canManageGroup($userId, $data['group_id'])) {
             return response()->json(['message' => 'No autorizado para invitar en este grupo'], 403);
@@ -253,10 +251,10 @@ class InvitationController extends Controller
      * Body: { token }
      * Requiere auth; el email debe coincidir con invitee_email.
      */
-    public function accept(Request $request): JsonResponse
+    public function accept(AcceptInvitationRequest $request): JsonResponse
     {
         $user   = $request->user();
-        $token  = $request->validate(['token' => ['required', 'string']])['token'];
+        $token  = $request->validated()['token'];
 
         $inv = DB::table('invitations')->where('token', $token)->first();
         if (!$inv) {

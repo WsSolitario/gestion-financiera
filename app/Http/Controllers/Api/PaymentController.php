@@ -1,3 +1,4 @@
+// app/Http/Controllers/Api/PaymentController.php
 <?php
 
 namespace App\Http\Controllers\Api;
@@ -12,43 +13,37 @@ use App\Models\Payment;
 use App\Jobs\SendPushNotification;
 use Illuminate\Validation\Rule;
 use App\Services\PaymentService;
+use App\Http\Resources\PaymentResource;
+use App\Http\Requests\Payment\StorePaymentRequest;
+use App\Http\Requests\Payment\ApprovePaymentRequest;
 
 class PaymentController extends Controller
 {
-    public function __construct(private PaymentService $paymentService)
-    {
-    }
+    public function __construct(private PaymentService $paymentService) {}
 
     public function index(Request $request): JsonResponse
     {
         $userId    = $request->user()->id;
         $status    = $request->query('status');
         $direction = $request->query('direction');
-        $groupId   = $request->query('groupId');
-        $start     = $request->query('startDate') ? Carbon::parse($request->query('startDate'))->startOfDay() : null;
-        $end       = $request->query('endDate')   ? Carbon::parse($request->query('endDate'))->endOfDay()   : null;
+
+        $groupId = $request->query('group_id', $request->query('groupId'));
+        $startQ  = $request->query('start_date', $request->query('startDate'));
+        $endQ    = $request->query('end_date',   $request->query('endDate'));
+
+        $start = $startQ ? Carbon::parse($startQ)->startOfDay() : null;
+        $end   = $endQ   ? Carbon::parse($endQ)->endOfDay()     : null;
 
         $result = $this->paymentService->listPayments($userId, $status, $direction, $groupId, $start, $end);
-
         return response()->json($result, 200);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StorePaymentRequest $request): JsonResponse
     {
         $userId = $request->user()->id;
-
-        $data = $request->validate([
-            'group_id'     => ['required', 'uuid'],
-            'from_user_id' => ['required', 'uuid'],
-            'to_user_id'   => ['required', 'uuid', 'different:from_user_id'],
-            'amount'       => ['required', 'numeric', 'gt:0'],
-            'note'         => ['sometimes', 'nullable', 'string'],
-            'evidence_url' => ['sometimes', 'nullable', 'url'],
-            'payment_method' => ['sometimes', 'nullable', 'string', Rule::in(['cash', 'transfer'])],
-        ]);
+        $data   = $request->validated();
 
         $result = $this->paymentService->createPayment($userId, $data);
-
         return response()->json($result, 201);
     }
 
@@ -57,13 +52,12 @@ class PaymentController extends Controller
         $userId = $request->user()->id;
 
         $model = Payment::with(['payer','receiver'])->find($paymentId);
-
         if (!$model) return response()->json(['message' => 'Pago no encontrado'], 404);
         if ($model->from_user_id !== $userId && $model->to_user_id !== $userId) {
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
-        $model->payer_name = $model->payer?->name;
+        $model->payer_name    = $model->payer?->name;
         $model->receiver_name = $model->receiver?->name;
 
         $eps = DB::table('expense_participants as ep')
@@ -71,9 +65,9 @@ class PaymentController extends Controller
             ->join('users as u', 'u.id', '=', 'ep.user_id')
             ->where('ep.payment_id', $paymentId)
             ->select(
-            'ep.id', 'ep.expense_id', 'ep.user_id', 'u.name as user_name', 'u.email as user_email',
-            'ep.amount_due', 'ep.is_paid', 'e.group_id', 'e.description', 'e.expense_date'
-        )
+                'ep.id', 'ep.expense_id', 'ep.user_id', 'u.name as user_name', 'u.email as user_email',
+                'ep.amount_due', 'ep.is_paid', 'e.group_id', 'e.description', 'e.expense_date'
+            )
             ->get()
             ->map(function ($row) {
                 return [
@@ -90,10 +84,10 @@ class PaymentController extends Controller
                 ];
             });
 
-        $payload = $this->formatPaymentRow($model, $userId);
-        $payload['participants'] = $eps;
+        $model->participants = $eps;
+        $model->direction = $model->from_user_id === $userId ? 'outgoing' : 'incoming';
 
-        return response()->json($payload, 200);
+        return (new PaymentResource($model))->response();
     }
 
     public function update(string $paymentId, Request $request): JsonResponse
@@ -114,45 +108,37 @@ class PaymentController extends Controller
         if (empty($data)) return response()->json(['message' => 'Nada que actualizar'], 422);
 
         $data['updated_at'] = now();
+
         DB::table('payments')
             ->where('id', $paymentId)
             ->where('status', 'pending')
             ->update($data);
 
-        $updated = DB::table('payments as p')
-            ->leftJoin('users as payer', 'payer.id', '=', 'p.from_user_id')
-            ->leftJoin('users as recv',  'recv.id',  '=', 'p.to_user_id')
-            ->where('p.id', $paymentId)
-            ->select('p.*', 'payer.name as payer_name', 'recv.name as receiver_name')
+        $updated = DB::table('payments as pmt')
+            ->leftJoin('users as payer', 'payer.id', '=', 'pmt.from_user_id')
+            ->leftJoin('users as recv',  'recv.id',  '=', 'pmt.to_user_id')
+            ->where('pmt.id', $paymentId)
+            ->select('pmt.*', 'payer.name as payer_name', 'recv.name as receiver_name')
             ->first();
 
-        return response()->json([
-            'message' => 'Pago actualizado',
-            'payment' => $this->formatPaymentRow($updated, $userId),
-        ], 200);
+        $updated->direction = 'outgoing';
+
+        return (new PaymentResource($updated))
+            ->additional(['message' => 'Pago actualizado'])
+            ->response();
     }
 
-    public function approve(string $paymentId, Request $request): JsonResponse
+    public function approve(string $paymentId, ApprovePaymentRequest $request): JsonResponse
     {
         $userId = $request->user()->id;
-
         $applied = [];
 
         $result = DB::transaction(function () use ($paymentId, $userId, &$applied) {
-            $payment = DB::table('payments')
-                ->where('id', $paymentId)
-                ->lockForUpdate()
-                ->first();
+            $payment = DB::table('payments')->where('id', $paymentId)->lockForUpdate()->first();
 
-            if (!$payment) {
-                return ['error' => ['status' => 404, 'message' => 'Pago no encontrado']];
-            }
-            if ($payment->to_user_id !== $userId) {
-                return ['error' => ['status' => 403, 'message' => 'Solo el receptor puede aprobar este pago']];
-            }
-            if ($payment->status !== 'pending') {
-                return ['error' => ['status' => 409, 'message' => 'Solo puedes aprobar pagos pendientes']];
-            }
+            if (!$payment) return ['error' => ['status' => 404, 'message' => 'Pago no encontrado']];
+            if ($payment->to_user_id !== $userId) return ['error' => ['status' => 403, 'message' => 'Solo el receptor puede aprobar este pago']];
+            if ($payment->status !== 'pending') return ['error' => ['status' => 409, 'message' => 'Solo puedes aprobar pagos pendientes']];
 
             $remaining = (int) round($payment->amount * 100);
 
@@ -170,44 +156,42 @@ class PaymentController extends Controller
 
             foreach ($pending as $row) {
                 if ($remaining <= 0) break;
-                $due = (int) round($row->amount_due * 100);
+                $due   = (int) round($row->amount_due * 100);
                 $apply = min($due, $remaining);
 
                 DB::table('expense_participants')->where('id', $row->id)->update([
-                    'is_paid' => $apply === $due,
+                    'is_paid'    => $apply === $due,
                     'payment_id' => $payment->id,
                 ]);
 
                 if ($apply < $due) {
                     DB::table('expense_participants')->insert([
-                        'id' => (string) Str::uuid(),
+                        'id'         => (string) Str::uuid(),
                         'expense_id' => $row->expense_id,
-                        'user_id' => $row->user_id,
+                        'user_id'    => $row->user_id,
                         'amount_due' => ($due - $apply) / 100,
-                        'is_paid' => false,
+                        'is_paid'    => false,
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
                 }
 
                 $applied[] = [
-                    'expense_id' => $row->expense_id,
+                    'expense_id'     => $row->expense_id,
                     'participant_id' => $row->id,
-                    'amount' => $apply / 100,
+                    'amount'         => $apply / 100,
                 ];
 
                 $remaining -= $apply;
                 $affectedExpenseIds[] = $row->expense_id;
             }
 
-            DB::table('payments')
-                ->where('id', $payment->id)
-                ->update([
-                    'status' => 'approved',
-                    'payment_date' => now(),
-                    'unapplied_amount' => $remaining / 100,
-                    'updated_at' => now(),
-                ]);
+            DB::table('payments')->where('id', $payment->id)->update([
+                'status'           => 'approved',
+                'payment_date'     => now(),
+                'unapplied_amount' => $remaining / 100,
+                'updated_at'       => now(),
+            ]);
 
             foreach (array_unique($affectedExpenseIds) as $expenseId) {
                 $allPaid = !DB::table('expense_participants')
@@ -233,10 +217,12 @@ class PaymentController extends Controller
 
         $updated = DB::table('payments as p')
             ->leftJoin('users as payer', 'payer.id', '=', 'p.from_user_id')
-            ->leftJoin('users as recv', 'recv.id', '=', 'p.to_user_id')
+            ->leftJoin('users as recv',  'recv.id',  '=', 'p.to_user_id')
             ->where('p.id', $paymentId)
             ->select('p.*', 'payer.name as payer_name', 'recv.name as receiver_name')
             ->first();
+
+        $updated->direction = $updated->from_user_id === $userId ? 'outgoing' : 'incoming';
 
         SendPushNotification::dispatch(
             $payment->from_user_id,
@@ -244,14 +230,11 @@ class PaymentController extends Controller
             "Tu pago fue aprobado por {$updated->receiver_name}"
         );
 
-        return response()->json([
-            'message' => 'Payment approved',
-            'payment' => $this->formatPaymentRow($updated, $userId),
-            'applied' => $applied,
-        ], 200);
+        return (new PaymentResource($updated))
+            ->additional(['message' => 'Payment approved', 'applied' => $applied])
+            ->response();
     }
 
-    // NUEVO: rechazar pago pendiente (libera EPs)
     public function reject(string $paymentId, Request $request): JsonResponse
     {
         $userId = $request->user()->id;
@@ -262,7 +245,7 @@ class PaymentController extends Controller
         if ($p->status !== 'pending') return response()->json(['message' => 'Solo puedes rechazar pagos pendientes'], 409);
 
         DB::table('payments')->where('id', $paymentId)->update([
-            'status' => 'rejected',
+            'status'     => 'rejected',
             'updated_at' => now(),
         ]);
 
@@ -271,8 +254,8 @@ class PaymentController extends Controller
 
     public function due(Request $request): JsonResponse
     {
-        $userId = $request->user()->id;
-        $groupId = $request->query('group_id');
+        $userId  = $request->user()->id;
+        $groupId = $request->query('group_id', $request->query('groupId'));
 
         $base = DB::table('expense_participants as ep')
             ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
@@ -338,29 +321,6 @@ class PaymentController extends Controller
             'by_group'    => $byGroup,
             'recent'      => $recent,
         ], 200);
-    }
-
-    private function formatPaymentRow(object $p, string $currentUserId): array
-    {
-        $direction = $p->from_user_id === $currentUserId ? 'outgoing' :
-            ($p->to_user_id === $currentUserId ? 'incoming' : 'other');
-
-        return [
-            'id'            => $p->id,
-            'group_id'      => $p->group_id,
-            'amount'        => $this->money($p->amount),
-            'status'        => $p->status,
-            'payment_date'  => $p->payment_date,
-            'payment_method' => $p->payment_method,
-            'note'          => $p->note,
-            'evidence_url'  => $p->evidence_url,
-            'from_user_id'  => $p->from_user_id,
-            'payer_name'    => $p->payer_name ?? null,
-            'to_user_id'    => $p->to_user_id,
-            'receiver_name' => $p->receiver_name ?? null,
-            'direction'     => $direction,
-            'unapplied_amount' => $this->money($p->unapplied_amount ?? 0),
-        ];
     }
 
     private function money($value): string
