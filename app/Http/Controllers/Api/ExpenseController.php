@@ -10,14 +10,14 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
-use App\Jobs\ProcessExpenseOcr;
+use App\Services\ExpenseService;
 
-use App\Models\Expense;
-use App\Models\ExpenseParticipant;
-use App\Models\Group;
 
 class ExpenseController extends Controller
 {
+    public function __construct(private ExpenseService $expenseService)
+    {
+    }
     /**
      * GET /api/expenses
      * Lista gastos donde el usuario es pagador o participante.
@@ -33,73 +33,9 @@ class ExpenseController extends Controller
         $start   = $request->query('startDate') ? Carbon::parse($request->query('startDate'))->startOfDay() : null;
         $end     = $request->query('endDate')   ? Carbon::parse($request->query('endDate'))->endOfDay()   : null;
 
-        $q = DB::table('expenses as e')
-            ->leftJoin('expense_participants as ep', 'ep.expense_id', '=', 'e.id')
-            ->where(function ($q) use ($userId) {
-                $q->where('e.payer_id', $userId)
-                  ->orWhere('ep.user_id', $userId);
-            })
-            ->when($groupId, fn($q) => $q->where('e.group_id', $groupId))
-            ->when($start,   fn($q) => $q->where('e.expense_date', '>=', $start->toDateString()))
-            ->when($end,     fn($q) => $q->where('e.expense_date', '<=', $end->toDateString()))
-            ->select('e.*')
-            ->distinct()
-            ->orderByDesc('e.expense_date')
-            ->orderByDesc('e.created_at');
+        $result = $this->expenseService->listExpenses($userId, $groupId, $start, $end);
 
-        $items = $q->paginate(15);
-
-        // Enriquecemos con participantes
-        $expenseIds = collect($items->items())->pluck('id')->all();
-        $participants = DB::table('expense_participants as ep')
-            ->join('users as u', 'u.id', '=', 'ep.user_id')
-            ->whereIn('ep.expense_id', $expenseIds)
-            ->select('ep.*', 'u.name as user_name', 'u.email as user_email')
-            ->get()
-            ->groupBy('expense_id');
-
-        $data = collect($items->items())->map(function ($e) use ($participants, $userId) {
-            $list = ($participants[$e->id] ?? collect())->map(function ($p) {
-                return [
-                    'id'         => $p->id,
-                    'user_id'    => $p->user_id,
-                    'user_name'  => $p->user_name,
-                    'user_email' => $p->user_email,
-                    'amount_due' => $this->money($p->amount_due),
-                    'is_paid'    => (bool) $p->is_paid,
-                    'payment_id' => $p->payment_id,
-                ];
-            })->values();
-
-            return [
-                'id'               => $e->id,
-                'description'      => $e->description,
-                'total_amount'     => $this->money($e->total_amount),
-                'payer_id'         => $e->payer_id,
-                'group_id'         => $e->group_id,
-                'ticket_image_url' => $e->ticket_image_url,
-                'ocr_status'       => $e->ocr_status,
-                'status'           => $e->status,
-                'expense_date'     => $e->expense_date,
-                'participants'     => $list,
-                'role'             => $e->payer_id === $userId ? 'payer' : 'participant',
-            ];
-        });
-
-        return response()->json([
-            'filters' => [
-                'groupId'   => $groupId,
-                'startDate' => $start?->toDateString(),
-                'endDate'   => $end?->toDateString(),
-            ],
-            'data' => $data,
-            'pagination' => [
-                'current_page' => $items->currentPage(),
-                'per_page'     => $items->perPage(),
-                'total'        => $items->total(),
-                'last_page'    => $items->lastPage(),
-            ],
-        ], 200);
+        return response()->json($result, 200);
     }
 
     /**
@@ -122,68 +58,9 @@ class ExpenseController extends Controller
 
         $data = $this->validateStore($request);
 
-        // Validar que el pagador (usuario actual) y TODOS los participantes pertenecen al grupo
-        $this->assertGroupMembershipOrFail($userId, $data['group_id']);
-        $uniqueUserIds = collect($data['participants'])->pluck('user_id')->unique()->values();
-        foreach ($uniqueUserIds as $uid) {
-            $this->assertGroupMembershipOrFail($uid, $data['group_id']);
-        }
+        $result = $this->expenseService->createExpense($userId, $data);
 
-        // Validar suma de participantes = total_amount
-        $sum = collect($data['participants'])->sum(fn($p) => (float)$p['amount_due']);
-        if ($this->money($sum) !== $this->money($data['total_amount'])) {
-            throw ValidationException::withMessages([
-                'participants' => ['La suma de amount_due no coincide con total_amount.'],
-            ]);
-        }
-
-        // Lógica de ticket / OCR
-        $hasTicket = (bool) $data['has_ticket'];
-        $ticketUrl = $hasTicket ? ($data['ticket_image_url'] ?? null) : null;
-        $ocrStatus = $hasTicket ? 'pending' : 'skipped';
-
-        $expense = DB::transaction(function () use ($data, $userId, $ticketUrl, $ocrStatus) {
-            $expenseId = (string) Str::uuid();
-
-            DB::table('expenses')->insert([
-                'id'               => $expenseId,
-                'description'      => $data['description'],
-                'total_amount'     => $data['total_amount'],
-                'payer_id'         => $userId,
-                'group_id'         => $data['group_id'],
-                'ticket_image_url' => $ticketUrl,          // null si no hay ticket
-                'ocr_status'       => $ocrStatus,          // 'pending' o 'skipped'
-                'ocr_raw_text'     => null,
-                'status'           => 'pending',
-                'expense_date'     => $data['expense_date'],
-            ]);
-
-            // Insertar participantes (UUIDs)
-            $rows = [];
-            foreach ($data['participants'] as $p) {
-                $rows[] = [
-                    'id'         => (string) Str::uuid(),
-                    'expense_id' => $expenseId,
-                    'user_id'    => $p['user_id'],
-                    'amount_due' => $p['amount_due'],
-                    'is_paid'    => false,
-                    'payment_id' => null,
-                ];
-            }
-            DB::table('expense_participants')->insert($rows);
-
-            return DB::table('expenses')->where('id', $expenseId)->first();
-        });
-
-        // Lanzar OCR solo si corresponde
-        if ($hasTicket && $ticketUrl) {
-            ProcessExpenseOcr::dispatch($expense->id);
-        }
-
-        return response()->json([
-            'message' => 'Gasto creado',
-            'expense' => $this->formatExpense($expense),
-        ], 201);
+        return response()->json($result, 201);
     }
 
     /**

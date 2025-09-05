@@ -11,9 +11,14 @@ use Carbon\Carbon;
 use App\Models\Payment;
 use App\Jobs\SendPushNotification;
 use Illuminate\Validation\Rule;
+use App\Services\PaymentService;
 
 class PaymentController extends Controller
 {
+    public function __construct(private PaymentService $paymentService)
+    {
+    }
+
     public function index(Request $request): JsonResponse
     {
         $userId    = $request->user()->id;
@@ -23,45 +28,9 @@ class PaymentController extends Controller
         $start     = $request->query('startDate') ? Carbon::parse($request->query('startDate'))->startOfDay() : null;
         $end       = $request->query('endDate')   ? Carbon::parse($request->query('endDate'))->endOfDay()   : null;
 
-        $q = DB::table('payments as p')
-            ->leftJoin('users as payer', 'payer.id', '=', 'p.from_user_id')
-            ->leftJoin('users as recv',  'recv.id',  '=', 'p.to_user_id')
-            ->when($direction === 'incoming', fn($qq) => $qq->where('p.to_user_id', $userId))
-            ->when($direction === 'outgoing', fn($qq) => $qq->where('p.from_user_id', $userId))
-            ->when(!$direction, function ($qq) use ($userId) {
-                $qq->where(function ($w) use ($userId) {
-                    $w->where('p.from_user_id', $userId)->orWhere('p.to_user_id', $userId);
-                });
-            })
-            ->when($status, fn($qq) => $qq->where('p.status', $status))
-            ->when($groupId, fn($qq) => $qq->where('p.group_id', $groupId))
-            ->when($start, fn($qq) => $qq->whereRaw('COALESCE(p.payment_date, p.created_at) >= ?', [$start->toDateTimeString()]))
-            ->when($end,   fn($qq) => $qq->whereRaw('COALESCE(p.payment_date, p.created_at) <= ?', [$end->toDateTimeString()]))
-            ->select('p.*', 'payer.name as payer_name', 'recv.name as receiver_name')
-            ->orderByDesc(DB::raw('COALESCE(p.payment_date, p.created_at)'));
+        $result = $this->paymentService->listPayments($userId, $status, $direction, $groupId, $start, $end);
 
-        $items = $q->paginate(15);
-
-        $data = collect($items->items())->map(function ($p) use ($userId) {
-            return $this->formatPaymentRow($p, $userId);
-        });
-
-        return response()->json([
-            'filters' => [
-                'status'    => $status,
-                'direction' => $direction,
-                'groupId'   => $groupId,
-                'startDate' => $start?->toDateString(),
-                'endDate'   => $end?->toDateString(),
-            ],
-            'data' => $data,
-            'pagination' => [
-                'current_page' => $items->currentPage(),
-                'per_page'     => $items->perPage(),
-                'total'        => $items->total(),
-                'last_page'    => $items->lastPage(),
-            ],
-        ], 200);
+        return response()->json($result, 200);
     }
 
     public function store(Request $request): JsonResponse
@@ -78,44 +47,9 @@ class PaymentController extends Controller
             'payment_method' => ['sometimes', 'nullable', 'string', Rule::in(['cash', 'transfer'])],
         ]);
 
-        if ($data['from_user_id'] !== $userId) {
-            return response()->json(['message' => 'No puedes crear pagos a nombre de otro usuario'], 403);
-        }
+        $result = $this->paymentService->createPayment($userId, $data);
 
-        $members = DB::table('group_members')
-            ->where('group_id', $data['group_id'])
-            ->whereIn('user_id', [$data['from_user_id'], $data['to_user_id']])
-            ->count();
-        if ($members < 2) {
-            return response()->json(['message' => 'Ambos usuarios deben pertenecer al grupo'], 422);
-        }
-
-        $paymentId = (string) Str::uuid();
-        DB::table('payments')->insert([
-            'id' => $paymentId,
-            'group_id' => $data['group_id'],
-            'from_user_id' => $data['from_user_id'],
-            'to_user_id' => $data['to_user_id'],
-            'amount' => $data['amount'],
-            'note' => $data['note'] ?? null,
-            'evidence_url' => $data['evidence_url'] ?? null,
-            'payment_method' => $data['payment_method'] ?? null,
-            'status' => 'pending',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $payment = DB::table('payments as p')
-            ->leftJoin('users as payer', 'payer.id', '=', 'p.from_user_id')
-            ->leftJoin('users as recv',  'recv.id',  '=', 'p.to_user_id')
-            ->where('p.id', $paymentId)
-            ->select('p.*', 'payer.name as payer_name', 'recv.name as receiver_name')
-            ->first();
-
-        return response()->json([
-            'message' => 'Payment created',
-            'payment' => $this->formatPaymentRow($payment, $userId),
-        ], 201);
+        return response()->json($result, 201);
     }
 
     public function show(string $paymentId, Request $request): JsonResponse
