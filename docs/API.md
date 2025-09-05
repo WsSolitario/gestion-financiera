@@ -356,6 +356,14 @@ Muestra un gasto específico.
 ### PUT /api/expenses/{id}
 Actualiza un gasto existente.
 
+**Body** (al menos un campo)
+- `description` (string, opcional)
+- `total_amount` (number, opcional)
+- `expense_date` (YYYY-MM-DD, opcional)
+- `has_ticket` (boolean, opcional)
+- `ticket_image_url` (string, requerido si `has_ticket=true`)
+- `participants` (array de `{ user_id, amount_due }`, opcional)
+
 ### DELETE /api/expenses/{id}
 Elimina un gasto (pagador).
 
@@ -394,6 +402,17 @@ Actualiza un pago pendiente.
 **Body** (al menos un campo)
 - `payment_method` (`cash`|`transfer`, opcional)
 - `evidence_url` (url, opcional)
+- `signature` (string, opcional)
+
+#### Solicitud
+```http
+PUT /api/payments/{id}
+{
+  "payment_method": "transfer",
+  "evidence_url": "https://example.com/recibo.png",
+  "signature": "Pago aprobado"
+}
+```
 
 ### POST /api/payments/{id}/approve
 El receptor aprueba el pago y aplica el monto a deudas.

@@ -14,6 +14,16 @@ class InvitationResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id'            => $this->id,
+            'inviter_id'    => $this->inviter_id,
+            'invitee_email' => $this->invitee_email,
+            'group_id'      => $this->group_id,
+            'token'         => $this->token,
+            'status'        => $this->status,
+            'expires_at'    => $this->expires_at,
+            'created_at'    => $this->created_at ?? null,
+            'updated_at'    => $this->updated_at ?? null,
+        ];
     }
 }

@@ -11,7 +11,7 @@ class RegisterRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,8 +21,18 @@ class RegisterRequest extends FormRequest
      */
     public function rules(): array
     {
+        $isPublic = config('app.mode_app') === 'public';
+
         return [
-            //
+            'name'                => ['required', 'string', 'max:100'],
+            'email'               => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password'            => ['required', 'string', 'min:8', 'confirmed'],
+            'invitation_token'    => ['sometimes', 'nullable', 'string'],
+            'profile_picture_url' => ['sometimes', 'nullable', 'url'],
+            'phone_number'        => ['sometimes', 'nullable', 'string', 'max:50'],
+            'registration_token'  => $isPublic
+                ? ['sometimes', 'nullable', 'string']
+                : ['required', 'string'],
         ];
     }
 }

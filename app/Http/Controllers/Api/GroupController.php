@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
+use App\Http\Requests\Group\StoreGroupRequest;
+use App\Http\Requests\Group\UpdateGroupRequest;
+use App\Http\Requests\Group\AddMemberRequest;
+use App\Http\Requests\Group\UpdateMemberRoleRequest;
 
 class GroupController extends Controller
 {
@@ -61,14 +64,11 @@ class GroupController extends Controller
      * Crea un grupo. El creador se vuelve owner y miembro.
      * Body: { name: string, description?: string }
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreGroupRequest $request): JsonResponse
     {
         $userId = $request->user()->id;
 
-        $data = $request->validate([
-            'name'        => ['required', 'string', 'max:150'],
-            'description' => ['sometimes', 'nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         $group = DB::transaction(function () use ($data, $userId) {
             $groupId = (string) Str::uuid();
@@ -132,7 +132,7 @@ class GroupController extends Controller
      * PUT /api/groups/{group}
      * owner o admin pueden actualizar name/description.
      */
-    public function update(string $groupId, Request $request): JsonResponse
+    public function update(string $groupId, UpdateGroupRequest $request): JsonResponse
     {
         $userId = $request->user()->id;
         $group  = DB::table('groups')->where('id', $groupId)->first();
@@ -143,10 +143,7 @@ class GroupController extends Controller
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
-        $data = $request->validate([
-            'name'        => ['sometimes', 'string', 'max:150'],
-            'description' => ['sometimes', 'nullable', 'string'],
-        ]);
+        $data = $request->validated();
 
         if (empty($data)) {
             return response()->json(['message' => 'Nada que actualizar'], 422);
@@ -183,7 +180,7 @@ class GroupController extends Controller
      * owner o admin agregan un miembro existente.
      * Body: { user_id: uuid, role?: 'member'|'admin' }
      */
-    public function addMember(string $groupId, Request $request): JsonResponse
+    public function addMember(string $groupId, AddMemberRequest $request): JsonResponse
     {
         $userId = $request->user()->id;
         $group  = DB::table('groups')->where('id', $groupId)->first();
@@ -194,10 +191,7 @@ class GroupController extends Controller
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
-        $data = $request->validate([
-            'user_id' => ['required', 'uuid'],
-            'role'    => ['sometimes', Rule::in(['member', 'admin'])], // 'owner' solo vía transfer
-        ]);
+        $data = $request->validated();
 
         $existsUser = DB::table('users')->where('id', $data['user_id'])->exists();
         if (!$existsUser) {
@@ -227,7 +221,7 @@ class GroupController extends Controller
      * PUT /api/groups/{group}/members/{user}
      * Cambiar rol de un miembro. Reglas en docstring.
      */
-    public function updateMemberRole(string $groupId, string $targetUserId, Request $request): JsonResponse
+    public function updateMemberRole(string $groupId, string $targetUserId, UpdateMemberRoleRequest $request): JsonResponse
     {
         $userId = $request->user()->id;
         $group  = DB::table('groups')->where('id', $groupId)->first();
@@ -236,9 +230,7 @@ class GroupController extends Controller
         $actorRole  = $this->userRole($group, $userId);
         $targetRole = $this->userRole($group, $targetUserId);
 
-        $data = $request->validate([
-            'role' => ['required', Rule::in(['member', 'admin', 'owner'])],
-        ]);
+        $data = $request->validated();
         $newRole = $data['role'];
 
         $isTargetMember = DB::table('group_members')
