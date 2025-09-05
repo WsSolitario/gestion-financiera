@@ -15,6 +15,7 @@ use App\Jobs\ProcessExpenseOcr;
 use App\Models\Expense;
 use App\Models\ExpenseParticipant;
 use App\Models\Group;
+use App\Http\Resources\ExpenseResource;
 
 class ExpenseController extends Controller
 {
@@ -48,8 +49,6 @@ class ExpenseController extends Controller
             ->orderByDesc('e.created_at');
 
         $items = $q->paginate(15);
-
-        // Enriquecemos con participantes
         $expenseIds = collect($items->items())->pluck('id')->all();
         $participants = DB::table('expense_participants as ep')
             ->join('users as u', 'u.id', '=', 'ep.user_id')
@@ -58,48 +57,32 @@ class ExpenseController extends Controller
             ->get()
             ->groupBy('expense_id');
 
-        $data = collect($items->items())->map(function ($e) use ($participants, $userId) {
-            $list = ($participants[$e->id] ?? collect())->map(function ($p) {
+        $collection = collect($items->items())->map(function ($e) use ($participants, $userId) {
+            $e->participants = ($participants[$e->id] ?? collect())->map(function ($p) {
                 return [
                     'id'         => $p->id,
                     'user_id'    => $p->user_id,
                     'user_name'  => $p->user_name,
                     'user_email' => $p->user_email,
-                    'amount_due' => $this->money($p->amount_due),
+                    'amount_due' => number_format((float) $p->amount_due, 2, '.', ''),
                     'is_paid'    => (bool) $p->is_paid,
                     'payment_id' => $p->payment_id,
                 ];
             })->values();
-
-            return [
-                'id'               => $e->id,
-                'description'      => $e->description,
-                'total_amount'     => $this->money($e->total_amount),
-                'payer_id'         => $e->payer_id,
-                'group_id'         => $e->group_id,
-                'ticket_image_url' => $e->ticket_image_url,
-                'ocr_status'       => $e->ocr_status,
-                'status'           => $e->status,
-                'expense_date'     => $e->expense_date,
-                'participants'     => $list,
-                'role'             => $e->payer_id === $userId ? 'payer' : 'participant',
-            ];
+            $e->role = $e->payer_id === $userId ? 'payer' : 'participant';
+            return $e;
         });
 
-        return response()->json([
-            'filters' => [
-                'groupId'   => $groupId,
-                'startDate' => $start?->toDateString(),
-                'endDate'   => $end?->toDateString(),
-            ],
-            'data' => $data,
-            'pagination' => [
-                'current_page' => $items->currentPage(),
-                'per_page'     => $items->perPage(),
-                'total'        => $items->total(),
-                'last_page'    => $items->lastPage(),
-            ],
-        ], 200);
+        $items->setCollection($collection);
+
+        return ExpenseResource::collection($items)
+            ->additional([
+                'filters' => [
+                    'groupId'   => $groupId,
+                    'startDate' => $start?->toDateString(),
+                    'endDate'   => $end?->toDateString(),
+                ],
+            ])->response();
     }
 
     /**
@@ -180,10 +163,10 @@ class ExpenseController extends Controller
             ProcessExpenseOcr::dispatch($expense->id);
         }
 
-        return response()->json([
-            'message' => 'Gasto creado',
-            'expense' => $this->formatExpense($expense),
-        ], 201);
+        return (new ExpenseResource($expense))
+            ->additional(['message' => 'Gasto creado'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     /**
@@ -219,10 +202,9 @@ class ExpenseController extends Controller
                 ];
             });
 
-        $payload = $this->formatExpense($expense);
-        $payload['participants'] = $parts;
-
-        return response()->json($payload, 200);
+        $expense->participants = $parts;
+        $expense->role = $expense->payer_id === $request->user()->id ? 'payer' : 'participant';
+        return (new ExpenseResource($expense))->response();
     }
 
     /**
@@ -343,10 +325,9 @@ class ExpenseController extends Controller
             ProcessExpenseOcr::dispatch($updated->id);
         }
 
-        return response()->json([
-            'message' => 'Gasto actualizado',
-            'expense' => $this->formatExpense($updated),
-        ], 200);
+        return (new ExpenseResource($updated))
+            ->additional(['message' => 'Gasto actualizado'])
+            ->response();
     }
 
     /**
@@ -398,10 +379,9 @@ class ExpenseController extends Controller
 
         $updated = DB::table('expenses')->where('id', $expenseId)->first();
 
-        return response()->json([
-            'message' => 'Gasto aprobado',
-            'expense' => $this->formatExpense($updated),
-        ], 200);
+        return (new ExpenseResource($updated))
+            ->additional(['message' => 'Gasto aprobado'])
+            ->response();
     }
 
     // ===========================
@@ -458,23 +438,6 @@ class ExpenseController extends Controller
             ->exists();
 
         return $inGroup;
-    }
-
-    private function formatExpense(object $e): array
-    {
-        return [
-            'id'               => $e->id,
-            'description'      => $e->description,
-            'total_amount'     => $this->money($e->total_amount),
-            'payer_id'         => $e->payer_id,
-            'group_id'         => $e->group_id,
-            'ticket_image_url' => $e->ticket_image_url,
-            'ocr_status'       => $e->ocr_status,
-            'status'           => $e->status,
-            'expense_date'     => $e->expense_date,
-            'created_at'       => $e->created_at ?? null,
-            'updated_at'       => $e->updated_at ?? null,
-        ];
     }
 
     private function money($value): string

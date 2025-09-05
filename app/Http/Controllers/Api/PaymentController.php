@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use App\Models\Payment;
 use App\Jobs\SendPushNotification;
 use Illuminate\Validation\Rule;
+use App\Http\Resources\PaymentResource;
 
 class PaymentController extends Controller
 {
@@ -42,26 +43,23 @@ class PaymentController extends Controller
 
         $items = $q->paginate(15);
 
-        $data = collect($items->items())->map(function ($p) use ($userId) {
-            return $this->formatPaymentRow($p, $userId);
+        $collection = collect($items->items())->map(function ($p) use ($userId) {
+            $p->direction = $p->from_user_id === $userId ? 'outgoing' : ($p->to_user_id === $userId ? 'incoming' : 'other');
+            return $p;
         });
 
-        return response()->json([
-            'filters' => [
-                'status'    => $status,
-                'direction' => $direction,
-                'groupId'   => $groupId,
-                'startDate' => $start?->toDateString(),
-                'endDate'   => $end?->toDateString(),
-            ],
-            'data' => $data,
-            'pagination' => [
-                'current_page' => $items->currentPage(),
-                'per_page'     => $items->perPage(),
-                'total'        => $items->total(),
-                'last_page'    => $items->lastPage(),
-            ],
-        ], 200);
+        $items->setCollection($collection);
+
+        return PaymentResource::collection($items)
+            ->additional([
+                'filters' => [
+                    'status'    => $status,
+                    'direction' => $direction,
+                    'groupId'   => $groupId,
+                    'startDate' => $start?->toDateString(),
+                    'endDate'   => $end?->toDateString(),
+                ],
+            ])->response();
     }
 
     public function store(Request $request): JsonResponse
@@ -112,10 +110,12 @@ class PaymentController extends Controller
             ->select('p.*', 'payer.name as payer_name', 'recv.name as receiver_name')
             ->first();
 
-        return response()->json([
-            'message' => 'Payment created',
-            'payment' => $this->formatPaymentRow($payment, $userId),
-        ], 201);
+        $payment->direction = 'outgoing';
+
+        return (new PaymentResource($payment))
+            ->additional(['message' => 'Payment created'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function show(string $paymentId, Request $request): JsonResponse
@@ -155,11 +155,10 @@ class PaymentController extends Controller
                     'expense_date' => $row->expense_date,
                 ];
             });
+        $model->participants = $eps;
+        $model->direction = $model->from_user_id === $userId ? 'outgoing' : 'incoming';
 
-        $payload = $this->formatPaymentRow($model, $userId);
-        $payload['participants'] = $eps;
-
-        return response()->json($payload, 200);
+        return (new PaymentResource($model))->response();
     }
 
     public function update(string $paymentId, Request $request): JsonResponse
@@ -192,10 +191,11 @@ class PaymentController extends Controller
             ->select('p.*', 'payer.name as payer_name', 'recv.name as receiver_name')
             ->first();
 
-        return response()->json([
-            'message' => 'Pago actualizado',
-            'payment' => $this->formatPaymentRow($updated, $userId),
-        ], 200);
+        $updated->direction = 'outgoing';
+
+        return (new PaymentResource($updated))
+            ->additional(['message' => 'Pago actualizado'])
+            ->response();
     }
 
     public function approve(string $paymentId, Request $request): JsonResponse
@@ -304,17 +304,19 @@ class PaymentController extends Controller
             ->select('p.*', 'payer.name as payer_name', 'recv.name as receiver_name')
             ->first();
 
+        $updated->direction = $updated->from_user_id === $userId ? 'outgoing' : 'incoming';
+
         SendPushNotification::dispatch(
             $payment->from_user_id,
             'Pago aprobado',
             "Tu pago fue aprobado por {$updated->receiver_name}"
         );
 
-        return response()->json([
-            'message' => 'Payment approved',
-            'payment' => $this->formatPaymentRow($updated, $userId),
-            'applied' => $applied,
-        ], 200);
+        return (new PaymentResource($updated))
+            ->additional([
+                'message' => 'Payment approved',
+                'applied' => $applied,
+            ])->response();
     }
 
     // NUEVO: rechazar pago pendiente (libera EPs)
@@ -404,29 +406,6 @@ class PaymentController extends Controller
             'by_group'    => $byGroup,
             'recent'      => $recent,
         ], 200);
-    }
-
-    private function formatPaymentRow(object $p, string $currentUserId): array
-    {
-        $direction = $p->from_user_id === $currentUserId ? 'outgoing' :
-            ($p->to_user_id === $currentUserId ? 'incoming' : 'other');
-
-        return [
-            'id'            => $p->id,
-            'group_id'      => $p->group_id,
-            'amount'        => $this->money($p->amount),
-            'status'        => $p->status,
-            'payment_date'  => $p->payment_date,
-            'payment_method' => $p->payment_method,
-            'note'          => $p->note,
-            'evidence_url'  => $p->evidence_url,
-            'from_user_id'  => $p->from_user_id,
-            'payer_name'    => $p->payer_name ?? null,
-            'to_user_id'    => $p->to_user_id,
-            'receiver_name' => $p->receiver_name ?? null,
-            'direction'     => $direction,
-            'unapplied_amount' => $this->money($p->unapplied_amount ?? 0),
-        ];
     }
 
     private function money($value): string
