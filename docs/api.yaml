@@ -816,11 +816,14 @@ paths:
                 evidence_url:
                   type: string
                   format: uri
+                signature:
+                  type: string
             examples:
               update:
                 value:
                   payment_method: cash
                   evidence_url: https://example.com/comprobante.jpg
+                  signature: Pago aprobado
       responses:
         '200':
           description: Pago actualizado
@@ -831,6 +834,7 @@ paths:
                   value:
                     id: 44444444-5555-6666-7777-888888888888
                     status: pending
+                    signature: Pago aprobado
   /payments/{id}/approve:
     parameters:
       - in: path
