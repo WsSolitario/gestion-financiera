@@ -1,3 +1,4 @@
+// app/Http/Controllers/Api/ReportController.php
 <?php
 
 namespace App\Http\Controllers\Api;
@@ -6,6 +7,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Support\MoneyFormatter;
 use App\Http\Requests\Report\ReportFilterRequest;
 
 class ReportController extends Controller
@@ -30,18 +32,13 @@ class ReportController extends Controller
 
         $paymentStatus = $data['paymentStatus'] ?? 'approved'; // approved|pending|rejected|any
 
-        // ============================
-        // TOTALES (GASTOS)
-        // ============================
-
-        // Total de gastos que TÚ pagaste (como payer)
+        // Totales (Gastos)
         $totalExpensesPaidByYou = DB::table('expenses as e')
             ->when($groupId, fn($q) => $q->where('e.group_id', $groupId))
             ->where('e.payer_id', $userId)
             ->whereBetween('e.expense_date', [$start->toDateString(), $end->toDateString()])
             ->sum('e.total_amount');
 
-        // Tu parte en gastos (suma de amount_due donde participas)
         $totalYourShare = DB::table('expense_participants as ep')
             ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
             ->where('ep.user_id', $userId)
@@ -49,7 +46,6 @@ class ReportController extends Controller
             ->whereBetween('e.expense_date', [$start->toDateString(), $end->toDateString()])
             ->sum('ep.amount_due');
 
-        // Lo que otros te deben (EPs de otros en tus gastos)
         $totalOwedToYou = DB::table('expense_participants as ep')
             ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
             ->where('e.payer_id', $userId)
@@ -58,20 +54,15 @@ class ReportController extends Controller
             ->whereBetween('e.expense_date', [$start->toDateString(), $end->toDateString()])
             ->sum('ep.amount_due');
 
-        // ============================
-        // TOTALES (PAGOS)
-        // ============================
-
+        // Base de pagos
         $paymentsBase = DB::table('payments as p')
             ->when($paymentStatus !== 'any', fn($q) => $q->where('p.status', $paymentStatus))
-            ->whereNotNull('p.payment_date') // para reportes usamos payment_date
+            ->whereNotNull('p.payment_date')
             ->whereBetween('p.payment_date', [$start->toDateTimeString(), $end->toDateTimeString()]);
 
-        // Entrantes (te pagan a ti)
         $totalIncoming = (clone $paymentsBase)
             ->where('p.to_user_id', $userId)
             ->when($groupId, function ($q) use ($groupId) {
-                // limitar a pagos que liquidan EPs de ese grupo
                 $q->whereExists(function ($sub) use ($groupId) {
                     $sub->from('expense_participants as ep')
                         ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
@@ -81,7 +72,6 @@ class ReportController extends Controller
             })
             ->sum('p.amount');
 
-        // Salientes (tú pagas a otros)
         $totalOutgoing = (clone $paymentsBase)
             ->where('p.from_user_id', $userId)
             ->when($groupId, function ($q) use ($groupId) {
@@ -94,11 +84,7 @@ class ReportController extends Controller
             })
             ->sum('p.amount');
 
-        // ============================
-        // SERIES TEMPORALES
-        // ============================
-
-        // 1) Gastos pagados por ti
+        // Series temporales
         $seriesExpensesPaidByYou = DB::table('expenses as e')
             ->when($groupId, fn($q) => $q->where('e.group_id', $groupId))
             ->where('e.payer_id', $userId)
@@ -107,9 +93,8 @@ class ReportController extends Controller
             ->groupByRaw("date_trunc('$grain', e.expense_date::timestamp)")
             ->orderByRaw("date_trunc('$grain', e.expense_date::timestamp)")
             ->get()
-            ->map(fn($r) => ['period' => $r->period, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['period' => $r->period, 'total' => MoneyFormatter::format($r->total)]);
 
-        // 2) Tu parte en gastos
         $seriesYourShare = DB::table('expense_participants as ep')
             ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
             ->where('ep.user_id', $userId)
@@ -119,9 +104,8 @@ class ReportController extends Controller
             ->groupByRaw("date_trunc('$grain', e.expense_date::timestamp)")
             ->orderByRaw("date_trunc('$grain', e.expense_date::timestamp)")
             ->get()
-            ->map(fn($r) => ['period' => $r->period, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['period' => $r->period, 'total' => MoneyFormatter::format($r->total)]);
 
-        // 3) Pagos entrantes
         $seriesIncoming = DB::table('payments as p')
             ->when($paymentStatus !== 'any', fn($q) => $q->where('p.status', $paymentStatus))
             ->where('p.to_user_id', $userId)
@@ -139,9 +123,8 @@ class ReportController extends Controller
             ->groupByRaw("date_trunc('$grain', p.payment_date)")
             ->orderByRaw("date_trunc('$grain', p.payment_date)")
             ->get()
-            ->map(fn($r) => ['period' => $r->period, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['period' => $r->period, 'total' => MoneyFormatter::format($r->total)]);
 
-        // 4) Pagos salientes
         $seriesOutgoing = DB::table('payments as p')
             ->when($paymentStatus !== 'any', fn($q) => $q->where('p.status', $paymentStatus))
             ->where('p.from_user_id', $userId)
@@ -159,13 +142,9 @@ class ReportController extends Controller
             ->groupByRaw("date_trunc('$grain', p.payment_date)")
             ->orderByRaw("date_trunc('$grain', p.payment_date)")
             ->get()
-            ->map(fn($r) => ['period' => $r->period, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['period' => $r->period, 'total' => MoneyFormatter::format($r->total)]);
 
-        // ============================
-        // DESGLOSES
-        // ============================
-
-        // Por grupo: gastos pagados por ti
+        // Desgloses
         $byGroupPaidByYou = DB::table('expenses as e')
             ->join('groups as g', 'g.id', '=', 'e.group_id')
             ->where('e.payer_id', $userId)
@@ -175,9 +154,8 @@ class ReportController extends Controller
             ->groupBy('g.id', 'g.name')
             ->orderByDesc(DB::raw('SUM(e.total_amount)'))
             ->get()
-            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => MoneyFormatter::format($r->total)]);
 
-        // Por grupo: tu parte en gastos
         $byGroupYourShare = DB::table('expense_participants as ep')
             ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
             ->join('groups as g', 'g.id', '=', 'e.group_id')
@@ -188,9 +166,8 @@ class ReportController extends Controller
             ->groupBy('g.id', 'g.name')
             ->orderByDesc(DB::raw('SUM(ep.amount_due)'))
             ->get()
-            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => MoneyFormatter::format($r->total)]);
 
-        // Por grupo: pagos salientes (se distribuye por grupos usando los EPs asociados)
         $byGroupOutgoing = DB::table('payments as p')
             ->join('expense_participants as ep', 'ep.payment_id', '=', 'p.id')
             ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
@@ -204,9 +181,8 @@ class ReportController extends Controller
             ->groupBy('g.id', 'g.name')
             ->orderByDesc(DB::raw('SUM(ep.amount_due)'))
             ->get()
-            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => MoneyFormatter::format($r->total)]);
 
-        // Por grupo: pagos entrantes (idem, usando EPs)
         $byGroupIncoming = DB::table('payments as p')
             ->join('expense_participants as ep', 'ep.payment_id', '=', 'p.id')
             ->join('expenses as e', 'e.id', '=', 'ep.expense_id')
@@ -220,9 +196,8 @@ class ReportController extends Controller
             ->groupBy('g.id', 'g.name')
             ->orderByDesc(DB::raw('SUM(ep.amount_due)'))
             ->get()
-            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['group_id' => $r->group_id, 'group_name' => $r->group_name, 'total' => MoneyFormatter::format($r->total)]);
 
-        // Desglose por contraparte (TOP 5)
         $topOutgoingByCounterparty = DB::table('payments as p')
             ->join('users as u', 'u.id', '=', 'p.to_user_id')
             ->when($paymentStatus !== 'any', fn($q) => $q->where('p.status', $paymentStatus))
@@ -234,7 +209,7 @@ class ReportController extends Controller
             ->orderByDesc(DB::raw('SUM(p.amount)'))
             ->limit(5)
             ->get()
-            ->map(fn($r) => ['user_id' => $r->user_id, 'name' => $r->name, 'total' => $this->money($r->total)]);
+            ->map(fn($r) => ['user_id' => $r->user_id, 'name' => $r->name, 'total' => MoneyFormatter::format($r->total)]);
 
         $topIncomingByCounterparty = DB::table('payments as p')
             ->join('users as u', 'u.id', '=', 'p.from_user_id')
@@ -247,11 +222,7 @@ class ReportController extends Controller
             ->orderByDesc(DB::raw('SUM(p.amount)'))
             ->limit(5)
             ->get()
-            ->map(fn($r) => ['user_id' => $r->user_id, 'name' => $r->name, 'total' => $this->money($r->total)]);
-
-        // ============================
-        // RESPUESTA
-        // ============================
+            ->map(fn($r) => ['user_id' => $r->user_id, 'name' => $r->name, 'total' => MoneyFormatter::format($r->total)]);
 
         return response()->json([
             'filters' => [
@@ -263,14 +234,14 @@ class ReportController extends Controller
             ],
             'totals' => [
                 'expenses' => [
-                    'paid_by_you' => $this->money($totalExpensesPaidByYou),
-                    'your_share'  => $this->money($totalYourShare),
-                    'owed_to_you' => $this->money($totalOwedToYou),
+                    'paid_by_you' => MoneyFormatter::format($totalExpensesPaidByYou),
+                    'your_share'  => MoneyFormatter::format($totalYourShare),
+                    'owed_to_you' => MoneyFormatter::format($totalOwedToYou),
                 ],
                 'payments' => [
-                    'incoming'    => $this->money($totalIncoming),
-                    'outgoing'    => $this->money($totalOutgoing),
-                    'net'         => $this->money($totalIncoming - $totalOutgoing),
+                    'incoming'    => MoneyFormatter::format($totalIncoming),
+                    'outgoing'    => MoneyFormatter::format($totalOutgoing),
+                    'net'         => MoneyFormatter::format($totalIncoming - $totalOutgoing),
                 ],
             ],
             'timeseries' => [
@@ -294,10 +265,7 @@ class ReportController extends Controller
         ], 200);
     }
 
-    // ============================
     // Helpers
-    // ============================
-
     private function resolveGrain(string $granularity, Carbon $start, Carbon $end): string
     {
         if ($granularity === 'day' || $granularity === 'month') {
@@ -305,10 +273,5 @@ class ReportController extends Controller
         }
         // auto: si el rango es <= 45 días => 'day', si no 'month'
         return $start->diffInDays($end) <= 45 ? 'day' : 'month';
-    }
-
-    private function money($value): string
-    {
-        return number_format((float) ($value ?? 0), 2, '.', '');
     }
 }

@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use App\Support\MoneyFormatter;
 
 class DashboardController extends Controller
 {
@@ -176,9 +177,9 @@ class DashboardController extends Controller
                     'expense_date'    => $row->expense_date,
                     'status'          => $row->status,
                     'group_id'        => $row->group_id,
-                    'total_amount'    => $this->money($row->total_amount),
+                    'total_amount'    => MoneyFormatter::format($row->total_amount),
                     'role'            => $role,
-                    'your_amount_due' => $row->your_amount_due !== null ? $this->money($row->your_amount_due) : null,
+                    'your_amount_due' => $row->your_amount_due !== null ? MoneyFormatter::format($row->your_amount_due) : null,
                     'your_is_paid'    => (bool) $row->your_is_paid,
                 ];
             });
@@ -213,7 +214,7 @@ class DashboardController extends Controller
 
                 return [
                     'id'           => $p->id,
-                    'amount'       => $this->money($p->amount),
+                    'amount'       => MoneyFormatter::format($p->amount),
                     'status'       => $p->status,
                     'payment_date' => $p->payment_date,
                     'method'       => $p->payment_method,
@@ -231,8 +232,8 @@ class DashboardController extends Controller
                 'endDate'   => $end?->toDateString(),
             ],
             'totals' => [
-                'you_owe'      => $this->money($totalYouOweRaw),
-                'owed_to_you'  => $this->money($totalOwedToYouRaw),
+                'you_owe'      => MoneyFormatter::format($totalYouOweRaw),
+                'owed_to_you'  => MoneyFormatter::format($totalOwedToYouRaw),
             ],
             'counts' => [
                 'groups'                      => $groupsCount,
@@ -243,12 +244,12 @@ class DashboardController extends Controller
                 'you_owe'     => $youOweByGroup->map(fn($g) => [
                     'group_id'   => $g->group_id,
                     'group_name' => $g->group_name,
-                    'total'      => $this->money($g->total),
+                    'total'      => MoneyFormatter::format($g->total),
                 ]),
                 'owed_to_you' => $owedToYouByGroup->map(fn($g) => [
                     'group_id'   => $g->group_id,
                     'group_name' => $g->group_name,
-                    'total'      => $this->money($g->total),
+                    'total'      => MoneyFormatter::format($g->total),
                 ]),
             ],
             'recent' => [
@@ -258,9 +259,4 @@ class DashboardController extends Controller
         ], 200);
     }
 
-    private function money($value): string
-    {
-        // Devuelve string con 2 decimales (evita problemas de floats)
-        return number_format((float) ($value ?? 0), 2, '.', '');
-    }
 }

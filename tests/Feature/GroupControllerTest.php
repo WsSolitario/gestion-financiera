@@ -69,7 +69,10 @@ class GroupControllerTest extends TestCase
     public function test_group_retrieval_returns_fallback_profile_picture_url_when_missing(): void
     {
         $user = User::factory()->create();
-        $group = Group::factory()->create(['owner_id' => $user->id, 'profile_picture_url' => null]);
+        $group = Group::factory()->create([
+            'owner_id' => $user->id,
+            'profile_picture_url' => null,
+        ]);
         DB::table('group_members')->insert([
             'id' => (string) Str::uuid(),
             'group_id' => $group->id,
@@ -115,5 +118,49 @@ class GroupControllerTest extends TestCase
         $this->getJson('/api/groups/' . $group->id)
             ->assertStatus(200)
             ->assertJsonPath('group.profile_picture_url', 'https://example.com/custom.png');
+    }
+
+    public function test_show_returns_profile_picture_url_for_members(): void
+    {
+        $owner = User::factory()->create([
+            'profile_picture_url' => 'https://example.com/owner.png',
+        ]);
+        $member = User::factory()->create([
+            'profile_picture_url' => 'https://example.com/member.png',
+        ]);
+
+        $group = Group::factory()->create(['owner_id' => $owner->id]);
+
+        DB::table('group_members')->insert([
+            [
+                'id' => (string) Str::uuid(),
+                'group_id' => $group->id,
+                'user_id' => $owner->id,
+                'role' => 'owner',
+                'joined_at' => now(),
+            ],
+            [
+                'id' => (string) Str::uuid(),
+                'group_id' => $group->id,
+                'user_id' => $member->id,
+                'role' => 'member',
+                'joined_at' => now(),
+            ],
+        ]);
+
+        $this->actingAs($owner, 'sanctum');
+
+        $response = $this->getJson('/api/groups/' . $group->id);
+
+        $response->assertStatus(200);
+        $response->assertJsonFragment([
+            'user_id' => $owner->id,
+            'profile_picture_url' => 'https://example.com/owner.png',
+        ]);
+        $response->assertJsonFragment([
+            'user_id' => $member->id,
+            'profile_picture_url' => 'https://example.com/member.png',
+        ]);
+        $response->assertJsonCount(2, 'members');
     }
 }

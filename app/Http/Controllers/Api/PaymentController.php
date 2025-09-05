@@ -12,6 +12,8 @@ use Carbon\Carbon;
 use App\Models\Payment;
 use App\Jobs\SendPushNotification;
 use Illuminate\Validation\Rule;
+
+use App\Support\MoneyFormatter;
 use App\Services\PaymentService;
 use App\Http\Resources\PaymentResource;
 use App\Http\Requests\Payment\StorePaymentRequest;
@@ -77,7 +79,7 @@ class PaymentController extends Controller
                     'user_id'      => $row->user_id,
                     'user_name'    => $row->user_name,
                     'user_email'   => $row->user_email,
-                    'amount_due'   => $this->money($row->amount_due),
+                    'amount_due'   => MoneyFormatter::format($row->amount_due),
                     'is_paid'      => (bool) $row->is_paid,
                     'expense_desc' => $row->description,
                     'expense_date' => $row->expense_date,
@@ -97,7 +99,7 @@ class PaymentController extends Controller
         $p = DB::table('payments')->where('id', $paymentId)->first();
         if (!$p) return response()->json(['message' => 'Pago no encontrado'], 404);
         if ($p->from_user_id !== $userId) return response()->json(['message' => 'Solo el pagador puede actualizar el pago'], 403);
-        if ($p->status !== 'pending') return response()->json(['message' => 'Solo puedes actualizar pagos pendientes'], 409);
+        if ($p->status !== 'pending') return response()->json(['message' => 'Solo puedes rechazar pagos pendientes'], 409);
 
         $data = $request->validate([
             'payment_method' => ['sometimes', 'nullable', 'string', Rule::in(['cash', 'transfer'])],
@@ -274,7 +276,7 @@ class PaymentController extends Controller
             ->map(fn($r) => [
                 'creditor_id'   => $r->creditor_id,
                 'creditor_name' => $r->creditor_name,
-                'total'         => $this->money($r->total),
+                'total'         => MoneyFormatter::format($r->total),
             ]);
 
         $byGroup = $base->clone()
@@ -286,7 +288,7 @@ class PaymentController extends Controller
             ->map(fn($r) => [
                 'group_id'   => $r->group_id,
                 'group_name' => $r->group_name,
-                'total'      => $this->money($r->total),
+                'total'      => MoneyFormatter::format($r->total),
             ]);
 
         $recent = $base->clone()
@@ -311,20 +313,15 @@ class PaymentController extends Controller
                 'expense_date'           => $row->expense_date,
                 'creditor_id'            => $row->payer_id,
                 'creditor_name'          => $row->creditor_name,
-                'amount_due'             => $this->money($row->amount_due),
+                'amount_due'             => MoneyFormatter::format($row->amount_due),
                 'linked_payment_id'      => $row->payment_id,
             ]);
 
         return response()->json([
-            'total_due'   => $this->money($totalGlobal),
+            'total_due'   => MoneyFormatter::format($totalGlobal),
             'by_creditor' => $byCreditor,
             'by_group'    => $byGroup,
             'recent'      => $recent,
         ], 200);
-    }
-
-    private function money($value): string
-    {
-        return number_format((float) ($value ?? 0), 2, '.', '');
     }
 }

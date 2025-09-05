@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Services\ExpenseService;
 
+use App\Support\MoneyFormatter;
 use App\Http\Requests\Expense\StoreExpenseRequest;
 use App\Http\Requests\Expense\UpdateExpenseRequest;
 use App\Http\Requests\Expense\ApproveExpenseRequest;
@@ -74,7 +75,7 @@ class ExpenseController extends Controller
                     'user_id'    => $p->user_id,
                     'user_name'  => $p->user_name,
                     'user_email' => $p->user_email,
-                    'amount_due' => $this->money($p->amount_due),
+                    'amount_due' => MoneyFormatter::format($p->amount_due),
                     'is_paid'    => (bool) $p->is_paid,
                     'payment_id' => $p->payment_id,
                 ];
@@ -100,11 +101,13 @@ class ExpenseController extends Controller
 
         if (isset($data['participants'])) {
             $uniqueUserIds = collect($data['participants'])->pluck('user_id')->unique()->values();
-            foreach ($uniqueUserIds as $uid) $this->assertGroupMembershipOrFail($uid, $expense->group_id);
+            foreach ($uniqueUserIds as $uid) {
+                $this->assertGroupMembershipOrFail($uid, $expense->group_id);
+            }
 
             $newTotal = $data['total_amount'] ?? (float) $expense->total_amount;
             $sum = collect($data['participants'])->sum(fn($p) => (float)$p['amount_due']);
-            if ($this->money($sum) !== $this->money($newTotal)) {
+            if (MoneyFormatter::format($sum) !== MoneyFormatter::format($newTotal)) {
                 throw ValidationException::withMessages([
                     'participants' => ['La suma de amount_due no coincide con total_amount.'],
                 ]);
@@ -118,6 +121,7 @@ class ExpenseController extends Controller
             if (array_key_exists('total_amount', $data)) $updateRow['total_amount'] = $data['total_amount'];
             if (array_key_exists('expense_date', $data)) $updateRow['expense_date'] = $data['expense_date'];
 
+            // Ticket/OCR
             if (array_key_exists('has_ticket', $data)) {
                 if ($data['has_ticket']) {
                     $updateRow['ticket_image_url'] = $data['ticket_image_url'];
@@ -236,10 +240,5 @@ class ExpenseController extends Controller
             ->where('group_id', $expense->group_id)
             ->where('user_id', $userId)
             ->exists();
-    }
-
-    private function money($value): string
-    {
-        return number_format((float) ($value ?? 0), 2, '.', '');
     }
 }
