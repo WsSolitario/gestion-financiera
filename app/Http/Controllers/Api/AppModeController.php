@@ -10,7 +10,7 @@ class AppModeController extends Controller
     public function show(): JsonResponse
     {
         return response()->json([
-            'mode_app' => config('app.mode_app'),
+            'mode' => config('app.mode_app'),
         ]);
     }
 }
