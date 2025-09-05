@@ -9,6 +9,11 @@ recurrentes personales.
 
 Este proyecto utiliza **PostgreSQL** como motor de base de datos.
 
+Requisitos previos:
+
+- PHP >= 8.2
+- Node.js >= 20 (recomendado)
+
 1. Clonar el repositorio y entrar al directorio del proyecto.
 2. Instalar dependencias de PHP y JavaScript:
    ```bash
@@ -24,10 +29,27 @@ Este proyecto utiliza **PostgreSQL** como motor de base de datos.
    ```bash
    php artisan migrate
    ```
-5. Levantar el servidor de desarrollo:
+5. Levantar el servidor de desarrollo del backend:
    ```bash
    php artisan serve
    ```
+6. En otra terminal, iniciar el entorno front-end:
+   ```bash
+   npm run dev
+   ```
+   También puedes utilizar el comando:
+   ```bash
+   composer dev
+   ```
+   que levanta servidor, cola y Vite simultáneamente.
+
+Para ejecutar la suite de pruebas:
+
+```bash
+php artisan test
+# o
+composer test
+```
 
 ### PostgreSQL con Docker Compose
 
@@ -118,6 +140,7 @@ Que devuelve un JSON con la forma:
 | `php artisan queue:listen` | Procesa trabajos en la cola.                     |
 | `npm run dev`              | Compila activos front‑end con Vite.              |
 | `php artisan test`         | Ejecuta la suite de pruebas.                     |
+| `composer test`            | Alias para ejecutar la suite de pruebas.        |
 
 ## Notificaciones Push
 
